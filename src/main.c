@@ -379,9 +379,17 @@ int main(void)
             if (CheckCollisionPointRec(mpos, layout.ok_button) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 options = false;
         }
+        else if (!CheckCollisionPointRec(mpos, layout.canvas))
+        {
+            left_on_canvas = false;
+            right_on_canvas = false;
+        }
         else
         {
             Vector2 mdelta = GetMouseDelta();
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                mdelta = (Vector2){0, 0}; // Preempt large deltas on the phone.
+
             for (int t = 0; t <= 20; t++)
             {
                 float alpha = t/20.0f;
