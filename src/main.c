@@ -59,15 +59,13 @@ static struct layout compute_layout(bool vertical)
 
     if (vertical)
     {
-        lay.current[0].x = 1;
-        lay.current[0].y = 1 + 32*2 + 1;
-        lay.current[0].width = 4;
-        lay.current[0].height = 4;
-
-        lay.current[1].x = 1 + 4 + 1;
-        lay.current[1].y = 1 + 32*2 + 1;
-        lay.current[1].width = 4;
-        lay.current[1].height = 4;
+        for (int t = 0; t < 2; ++t)
+        {
+            lay.current[t].x = 1 + (4 + 1)*t;
+            lay.current[t].y = 1 + 32*2 + 1;
+            lay.current[t].width = 4;
+            lay.current[t].height = 4;
+        }
 
         lay.palette.x = 1 + 4 + 1 + 4 + 1;
         lay.palette.y = 1 + 32*2 + 1;
@@ -76,15 +74,13 @@ static struct layout compute_layout(bool vertical)
     }
     else
     {
-        lay.current[0].x = 1 + 32*2 + 1;
-        lay.current[0].y = 1;
-        lay.current[0].width = 4;
-        lay.current[0].height = 4;
-
-        lay.current[1].x = 1 + 32*2 + 1;
-        lay.current[1].y = 1 + 4 + 1;
-        lay.current[1].width = 4;
-        lay.current[1].height = 4;
+        for (int t = 0; t < 2; ++t)
+        {
+            lay.current[t].x = 1 + 32*2 + 1;
+            lay.current[t].y = 1 + (4 + 1)*t;
+            lay.current[t].width = 4;
+            lay.current[t].height = 4;
+        }
 
         lay.palette.x = 1 + 32*2 + 1;
         lay.palette.y = 1 + 4 + 1 + 4 + 1;
