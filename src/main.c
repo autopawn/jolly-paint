@@ -469,6 +469,21 @@ int main(void)
             if (!st.grid)
                 DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
 
+            { // Button 2 (undo)
+                Rectangle rec = layout.buttons[2];
+                Color col = stack.len >= 2 ? BLUE : GRAY;
+                int s = rec.width*.3;
+                int x = rec.x + .5*rec.width;
+                int y = rec.y + .6*rec.height;
+
+                DrawCircleLines(x, y, s, col);
+                rec.width /= 2;
+                DrawRectangleRec(rec, BGCOLOR);
+                DrawLine(x - .5*s, y - s, x, y - s - .5*s, col);
+                DrawLine(x - .5*s, y - s, x, y - s + .5*s, col);
+                DrawLine(x - s, y + s - .5, x, y + s - .5, col);
+            }
+
             // Button 4 (save icon)
             Rectangle rec = rect_grow(layout.buttons[4], -2);
             DrawRectangleRec(rec, BLUE);
