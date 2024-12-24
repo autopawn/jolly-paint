@@ -6,6 +6,8 @@
 #include "palettes.h"
 
 #define CANVAS_SIZE 32
+#define BUTTON_COUNT 5
+#define BGCOLOR RAYWHITE
 
 struct layout
 {
@@ -13,8 +15,8 @@ struct layout
     int scale;
     Rectangle canvas;
     Rectangle palette;
-    Rectangle current[2];
-    Rectangle buttons[4];
+    Rectangle current;
+    Rectangle buttons[BUTTON_COUNT];
 };
 
 static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
@@ -62,20 +64,17 @@ static struct layout compute_layout(bool vertical)
 
     if (vertical)
     {
-        for (int t = 0; t < 2; ++t)
-        {
-            lay.current[t].x = 1 + (4 + 1)*t;
-            lay.current[t].y = 1 + 32*2 + 1;
-            lay.current[t].width = 4;
-            lay.current[t].height = 4;
-        }
+        lay.current.x = 2;
+        lay.current.y = 1 + 32*2 + 1;
+        lay.current.width = 4;
+        lay.current.height = 4;
 
-        lay.palette.x = 1 + 4 + 1 + 4 + 1;
+        lay.palette.x = 2 + 4 + 1;
         lay.palette.y = 1 + 32*2 + 1;
         lay.palette.width = 16*2;
         lay.palette.height = 2*2;
         
-        for (int t = 0; t < 4; ++t)
+        for (int t = 0; t < BUTTON_COUNT; ++t)
         {
             lay.buttons[t].x = lay.palette.x + lay.palette.width + 1 + (4 + 1)*t;
             lay.buttons[t].y = 1 + 32*2 + 1;
@@ -85,20 +84,17 @@ static struct layout compute_layout(bool vertical)
     }
     else
     {
-        for (int t = 0; t < 2; ++t)
-        {
-            lay.current[t].x = 1 + 32*2 + 1;
-            lay.current[t].y = 1 + (4 + 1)*t;
-            lay.current[t].width = 4;
-            lay.current[t].height = 4;
-        }
+        lay.current.x = 1 + 32*2 + 1;
+        lay.current.y = 2;
+        lay.current.width = 4;
+        lay.current.height = 4;
 
         lay.palette.x = 1 + 32*2 + 1;
-        lay.palette.y = 1 + 4 + 1 + 4 + 1;
+        lay.palette.y = 2 + 4 + 1;
         lay.palette.width = 2*2;
         lay.palette.height = 16*2;
 
-        for (int t = 0; t < 4; ++t)
+        for (int t = 0; t < BUTTON_COUNT; ++t)
         {
             lay.buttons[t].x = 1 + 32*2 + 1; 
             lay.buttons[t].y = lay.palette.y + lay.palette.height + 1 + (4 + 1)*t;
@@ -108,10 +104,9 @@ static struct layout compute_layout(bool vertical)
     }
 
     rectangle_scale(&lay.canvas, offset_x, offset_y, scale);
-    for (int t = 0; t < 2; ++t)
-        rectangle_scale(&lay.current[t], offset_x, offset_y, scale);
+    rectangle_scale(&lay.current, offset_x, offset_y, scale);
     rectangle_scale(&lay.palette, offset_x, offset_y, scale);
-    for (int t = 0; t < 4; ++t)
+    for (int t = 0; t < BUTTON_COUNT; ++t)
         rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
 
     return lay;
@@ -259,7 +254,7 @@ int main(void)
         }
 
         // Save image
-        if (CheckCollisionPointRec(mpos, layout.buttons[3]))
+        if (CheckCollisionPointRec(mpos, layout.buttons[4]))
         {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
@@ -271,17 +266,31 @@ int main(void)
         // Draw
         BeginDrawing();
 
-            ClearBackground(RAYWHITE);
+            ClearBackground(BGCOLOR);
             
             DrawRectangleLinesEx(rect_grow(layout.canvas, 1), 1, DARKGRAY);
 
             DrawRectangleLinesEx(rect_grow(layout.palette, 1), 1, DARKGRAY);
-            
-            DrawRectangleLinesEx(rect_grow(layout.current[0], 1), 1, DARKGRAY);
-            DrawRectangleRec(rect_grow(layout.current[0], -1), get_color(&st, st.col1));
-            
-            DrawRectangleLinesEx(rect_grow(layout.current[1], 1), 1, DARKGRAY);
-            DrawRectangleRec(rect_grow(layout.current[1], -1), get_color(&st, st.col2));
+
+            { // Draw current colors
+                Rectangle rec1 = {
+                        layout.current.x,
+                        layout.current.y,
+                        layout.current.width * 0.75,
+                        layout.current.height * 0.75,
+                };
+                Rectangle rec2 = {
+                        layout.current.x + layout.current.width * 0.25,
+                        layout.current.y + layout.current.height * 0.25,
+                        layout.current.width * 0.75,
+                        layout.current.height * 0.75,
+                };
+                DrawRectangleLinesEx(rect_grow(rec2, 1), 1, DARKGRAY);
+                DrawRectangleRec(rect_grow(rec2, -1), get_color(&st, st.col2));
+                DrawRectangleRec(rec1, BGCOLOR);
+                DrawRectangleLinesEx(rect_grow(rec1, 1), 1, DARKGRAY);
+                DrawRectangleRec(rect_grow(rec1, -1), get_color(&st, st.col1));
+            }
 
             for (int y = 0; y < CANVAS_SIZE; ++y)
             {
@@ -333,7 +342,7 @@ int main(void)
 
             // Draw buttons
             int scale = layout.scale;
-            for (int t = 0; t < 4; ++t)
+            for (int t = 0; t < BUTTON_COUNT; ++t)
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
 
             // Button 1 (grid toggle)
@@ -346,8 +355,8 @@ int main(void)
             if (!st.grid)
                 DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
 
-            // Button 3 (save icon)
-            Rectangle rec = rect_grow(layout.buttons[3], -2);
+            // Button 4 (save icon)
+            Rectangle rec = rect_grow(layout.buttons[4], -2);
             DrawRectangleRec(rec, BLUE);
             rec.height /= 4;
             rec.width /= 2;
