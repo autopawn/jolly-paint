@@ -128,6 +128,7 @@ int main(void)
         struct layout layout_v = compute_layout(true);
         struct layout layout_h = compute_layout(false);
         struct layout layout = (layout_v.scale >= layout_h.scale) ? layout_v : layout_h;
+        Vector2 mpos = GetMousePosition();
 
         // Update selected colors
         for (int c = 0; c < 16; ++c)
@@ -144,13 +145,29 @@ int main(void)
                 r.y += r.height * c;
             }
 
-            if (CheckCollisionPointRec(GetMousePosition(), r))
+            if (CheckCollisionPointRec(mpos, r))
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                     st.col1 = c;
                 if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
                     st.col2 = c;
             }
+        }
+
+        if (CheckCollisionPointRec(mpos, layout.canvas))
+        {
+            int pos_x = (mpos.x - layout.canvas.x)/layout.canvas.width * 32;
+            int pos_y = (mpos.y - layout.canvas.y)/layout.canvas.height * 32;
+
+            if (pos_x < 0) pos_x = 0;
+            if (pos_x >= 32) pos_x = 31;
+            if (pos_y < 0) pos_y = 0;
+            if (pos_y >= 32) pos_y = 31;
+
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                st.cells[pos_y][pos_x] = st.col1;
+            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                st.cells[pos_y][pos_x] = st.col2;
         }
 
         // Draw
