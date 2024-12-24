@@ -64,8 +64,8 @@ static struct layout compute_layout(bool vertical)
         lay.current[0].width = 4;
         lay.current[0].height = 4;
 
-        lay.current[1].x = 1;
-        lay.current[1].y = 1 + 4 + 1 + 32*2 + 1;
+        lay.current[1].x = 1 + 4 + 1;
+        lay.current[1].y = 1 + 32*2 + 1;
         lay.current[1].width = 4;
         lay.current[1].height = 4;
 
