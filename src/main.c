@@ -327,6 +327,14 @@ int main(void)
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
             undostack_save(&st, &stack);
 
+        // Swap colors
+        if (CheckCollisionPointRec(mpos, layout.current) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            int aux = st.col1;
+            st.col1 = st.col2;
+            st.col2 = aux;
+        }
+
         // Paint bucket toggle
         if (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             st.bucket = !st.bucket;
