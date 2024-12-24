@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     
-    <title>Cool Project | my cool new project</title>
+    <title>Jolly Paint | The official MDP Jolly Pixels editor!</title>
     
     <meta name="title" content="Cool Project by raylibtech">
     <meta name="description" content="my cool new project">
@@ -89,6 +89,20 @@
                     return canvas;
                 })()
             };
+        </script>
+        <script>
+          function saveFileFromMemoryFSToDisk(memoryFSname,localFSname)     // This can be called by C++ code
+          {
+             var data=FS.readFile(memoryFSname);
+             var blob;
+             var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+             if(isSafari) {
+                blob = new Blob([data.buffer], {type: "application/octet-stream"});
+             } else {
+                blob = new Blob([data.buffer], {type: "application/octet-binary"});
+             }
+             saveAs(blob, localFSname);
+          }
         </script>
         {{{ SCRIPT }}}
     </body>

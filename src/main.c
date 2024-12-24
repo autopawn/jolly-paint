@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <emscripten.h>
 
 #include "palettes.h"
 
@@ -127,6 +128,20 @@ static Color get_color(const struct state *st, int idx)
     return GetColor(palettes[st->pal].colors[idx]);
 }
 
+static void image_save(const struct state *st)
+{
+    Image img = GenImageColor(32*8, 32*8, WHITE);
+    for (int y = 0; y < CANVAS_SIZE; ++y)
+    {
+        for (int x = 0; x < CANVAS_SIZE; ++x)
+            ImageDrawRectangle(&img, 8*x, 8*y, 8, 8, get_color(st, st->cells[y][x]));
+    }
+
+    ExportImage(img, "img.png");
+    UnloadImage(img);
+    emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','image.png')");
+}
+
 int main(void)
 {
     // Initialization
@@ -185,10 +200,18 @@ int main(void)
                 st.cells[pos_y][pos_x] = st.col2;
         }
 
+        // Grid toggle
         if (CheckCollisionPointRec(mpos, layout.buttons[1]))
         {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 st.grid = !st.grid;
+        }
+
+        // Save image
+        if (CheckCollisionPointRec(mpos, layout.buttons[3]))
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                image_save(&st);
         }
 
         // Draw
@@ -268,6 +291,17 @@ int main(void)
                 DrawLine(gx + 1,  gy + y*scale, gx + 4*scale - 1, gy + y*scale, DARKGRAY);
             if (!st.grid)
                 DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
+
+            // Button 3 (save icon)
+            Rectangle rec = rect_grow(layout.buttons[3], -2);
+            DrawRectangleRec(rec, BLUE);
+            rec.height /= 4;
+            rec.width /= 2;
+            rec.x += rec.width/2;
+            DrawRectangleRec(rec, GRAY);
+            rec.y += 2*rec.height;
+            rec.height *= 2;
+            DrawRectangleRec(rec, GRAY);
 
         EndDrawing();
     }
