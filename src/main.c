@@ -324,6 +324,9 @@ int main(void)
     undostack_save(&st, &stack);
 
 
+    bool left_on_canvas = false;
+    bool right_on_canvas = false;
+
     // Main game loop
     unsigned int frame = 0;
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -395,27 +398,40 @@ int main(void)
                     if (pos_y < 0) pos_y = 0;
                     if (pos_y >= st.size) pos_y = st.size - 1;
 
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                        left_on_canvas = true;
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+                        right_on_canvas = true;
+
                     if (bucket)
                     {
                         int current = st.mat.cells[pos_y][pos_x];
-                        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                        if (left_on_canvas && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
                             flood_fill(&st, pos_x, pos_y, current, st.col1);
-                        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                        if (right_on_canvas && IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
                             flood_fill(&st, pos_x, pos_y, current, st.col2);
                     }
                     else
                     {
-                        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                        if (left_on_canvas && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
                             st.mat.cells[pos_y][pos_x] = st.col1;
-                        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                        if (right_on_canvas && IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
                             st.mat.cells[pos_y][pos_x] = st.col2;
                     }
                 }
             }
         }
         // Save undo checkpoint
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+        {
+            left_on_canvas = false;
             undostack_save(&st, &stack);
+        }
+        if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
+        {
+            right_on_canvas = false;
+            undostack_save(&st, &stack);
+        }
 
         // Swap colors
         if (IsKeyPressed(KEY_X) ||
@@ -637,7 +653,7 @@ int main(void)
                     DrawCircleSector((Vector2){rec.x + rec.width/2, rec.y + rec.height/2},
                             rec.width/2, 60*t + 15, 60*t + 45, 6, DARKGRAY);
                 DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.35, DARKGRAY);
-                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.2,
+                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.15,
                         options ? YELLOW : BGCOLOR);
             }
 
