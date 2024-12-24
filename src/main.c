@@ -1,31 +1,19 @@
 #include "raylib.h"
 
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
 int main(void)
 {
     // Initialization
-    //--------------------------------------------------------------------------------------
-    const int screenWidth = 400;
-    const int screenHeight = 400;
-
-    InitWindow(screenWidth, screenHeight, "Jolly paint");
+    InitWindow(400, 400, "Jolly paint");
     SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
 
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
+    SetTargetFPS(60);
 
     // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
+    while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         // Update
-        //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        //----------------------------------------------------------------------------------
 
         // Draw
-        //----------------------------------------------------------------------------------
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
@@ -33,13 +21,10 @@ int main(void)
             DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
         EndDrawing();
-        //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
-    //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
 
     return 0;
 }
