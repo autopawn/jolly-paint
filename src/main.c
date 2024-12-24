@@ -5,7 +5,7 @@
 
 #include "palettes.h"
 
-#define CANVAS_SIZE 32
+#define MAX_CANVAS_SIZE 32
 #define BUTTON_COUNT 5
 #define BGCOLOR RAYWHITE
 #define MAX_UNDOS 32
@@ -14,6 +14,7 @@ struct layout
 {
     bool vertical;
     int scale;
+    int pixel_size;
     Rectangle canvas;
     Rectangle palette;
     Rectangle current;
@@ -39,7 +40,7 @@ static Rectangle rect_grow(Rectangle rect, int growth)
     return rect;
 }
 
-static struct layout compute_layout(bool vertical)
+static struct layout compute_layout(int size, bool vertical)
 {
     struct layout lay = {0};
     lay.vertical = vertical;
@@ -47,8 +48,8 @@ static struct layout compute_layout(bool vertical)
     int size_w = GetScreenWidth();
     int size_h = GetScreenHeight();
 
-    int required_w = 1 + 32*2 + 1 + (vertical ? 0 : 2*2 + 1);
-    int required_h = 1 + 32*2 + 1 + (vertical ? 2*2 + 1 : 0);
+    int required_w = 1 + 64 + 1 + (vertical ? 0 : 2*2 + 1);
+    int required_h = 1 + 64 + 1 + (vertical ? 2*2 + 1 : 0);
 
     int scale_w = size_w / required_w;
     int scale_h = size_h / required_h;
@@ -60,44 +61,44 @@ static struct layout compute_layout(bool vertical)
 
     lay.canvas.x = 1;
     lay.canvas.y = 1;
-    lay.canvas.width = 32*2;
-    lay.canvas.height = 32*2;
+    lay.canvas.width = 64;
+    lay.canvas.height = 64;
 
     if (vertical)
     {
         lay.current.x = 2;
-        lay.current.y = 1 + 32*2 + 1;
+        lay.current.y = 1 + 64 + 1;
         lay.current.width = 4;
         lay.current.height = 4;
 
         lay.palette.x = 2 + 4 + 1;
-        lay.palette.y = 1 + 32*2 + 1;
+        lay.palette.y = 1 + 64 + 1;
         lay.palette.width = 16*2;
         lay.palette.height = 2*2;
         
         for (int t = 0; t < BUTTON_COUNT; ++t)
         {
             lay.buttons[t].x = lay.palette.x + lay.palette.width + 1 + (4 + 1)*t;
-            lay.buttons[t].y = 1 + 32*2 + 1;
+            lay.buttons[t].y = 1 + 64 + 1;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
         }
     }
     else
     {
-        lay.current.x = 1 + 32*2 + 1;
+        lay.current.x = 1 + 64 + 1;
         lay.current.y = 2;
         lay.current.width = 4;
         lay.current.height = 4;
 
-        lay.palette.x = 1 + 32*2 + 1;
+        lay.palette.x = 1 + 64 + 1;
         lay.palette.y = 2 + 4 + 1;
         lay.palette.width = 2*2;
         lay.palette.height = 16*2;
 
         for (int t = 0; t < BUTTON_COUNT; ++t)
         {
-            lay.buttons[t].x = 1 + 32*2 + 1; 
+            lay.buttons[t].x = 1 + 64 + 1; 
             lay.buttons[t].y = lay.palette.y + lay.palette.height + 1 + (4 + 1)*t;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
@@ -110,17 +111,24 @@ static struct layout compute_layout(bool vertical)
     for (int t = 0; t < BUTTON_COUNT; ++t)
         rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
 
+    lay.pixel_size = (int)(lay.canvas.width/size);
+    lay.canvas.x += (int)(.5*(lay.canvas.width - lay.pixel_size * size));
+    lay.canvas.y += (int)(.5*(lay.canvas.height - lay.pixel_size * size));
+    lay.canvas.height = lay.pixel_size * size;
+    lay.canvas.width = lay.pixel_size * size;
+
     return lay;
 }
 
 struct matrix
 {
-    unsigned char cells[CANVAS_SIZE][CANVAS_SIZE];
+    unsigned char cells[MAX_CANVAS_SIZE][MAX_CANVAS_SIZE];
 };
 
 struct state
 {
     struct matrix mat;
+    int size;
     int pal; // Current palette
     int col1, col2;
     bool bucket;
@@ -160,10 +168,10 @@ static void state_save(struct state *st)
 
 static void image_save(const struct state *st)
 {
-    Image img = GenImageColor(32*8, 32*8, WHITE);
-    for (int y = 0; y < CANVAS_SIZE; ++y)
+    Image img = GenImageColor(st->size*8, st->size*8, WHITE);
+    for (int y = 0; y < st->size; ++y)
     {
-        for (int x = 0; x < CANVAS_SIZE; ++x)
+        for (int x = 0; x < st->size; ++x)
             ImageDrawRectangle(&img, 8*x, 8*y, 8, 8, get_color(st, st->mat.cells[y][x]));
     }
 
@@ -184,9 +192,9 @@ void undostack_save(const struct state *st, struct undostack *stack)
     if (stack->len > 0)
     {
         bool same = true;
-        for (int y = 0; y < CANVAS_SIZE; ++y)
+        for (int y = 0; y < MAX_CANVAS_SIZE; ++y)
         {
-            for (int x = 0; x < CANVAS_SIZE; ++x)
+            for (int x = 0; x < MAX_CANVAS_SIZE; ++x)
             {
                 if (stack->mats[stack->len - 1].cells[y][x] != st->mat.cells[y][x])
                     same = false;
@@ -218,7 +226,7 @@ void undostack_undo(struct state *st, struct undostack *stack)
 
 void flood_fill(struct state *st, int x, int y, int a, int b)
 {
-    if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE)
+    if (x < 0 || y < 0 || x >= st->size || y >= st->size)
         return;
     if (st->mat.cells[y][x] == b || st->mat.cells[y][x] != a)
         return;
@@ -251,7 +259,7 @@ int main(void)
     SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
     SetTargetFPS(60);
 
-    struct state st = {.col1 = 3, .col2 = 8};
+    struct state st = {.col1 = 8, .col2 = 3, .size = 30};
     state_load(&st);
     struct undostack stack = {0};
     undostack_save(&st, &stack);
@@ -260,8 +268,8 @@ int main(void)
     unsigned int frame = 0;
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
-        struct layout layout_v = compute_layout(true);
-        struct layout layout_h = compute_layout(false);
+        struct layout layout_v = compute_layout(st.size, true);
+        struct layout layout_h = compute_layout(st.size, false);
         struct layout layout = (layout_v.scale >= layout_h.scale) ? layout_v : layout_h;
         Vector2 mpos = GetMousePosition();
 
@@ -298,13 +306,13 @@ int main(void)
             midpos.y = mpos.y - mdelta.y*(1-alpha);
             if (CheckCollisionPointRec(midpos, layout.canvas))
             {
-                int pos_x = (midpos.x - layout.canvas.x)/layout.canvas.width * 32;
-                int pos_y = (midpos.y - layout.canvas.y)/layout.canvas.height * 32;
+                int pos_x = (midpos.x - layout.canvas.x)/layout.pixel_size;
+                int pos_y = (midpos.y - layout.canvas.y)/layout.pixel_size;
 
                 if (pos_x < 0) pos_x = 0;
-                if (pos_x >= 32) pos_x = 31;
+                if (pos_x >= st.size) pos_x = st.size - 1;
                 if (pos_y < 0) pos_y = 0;
-                if (pos_y >= 32) pos_y = 31;
+                if (pos_y >= st.size) pos_y = st.size - 1;
 
                 if (st.bucket)
                 {
@@ -384,15 +392,16 @@ int main(void)
                 DrawRectangleRec(rect_grow(rec1, -1), get_color(&st, st.col1));
             }
 
-            for (int y = 0; y < CANVAS_SIZE; ++y)
+            // Draw canvas
+            for (int y = 0; y < st.size; ++y)
             {
-                for (int x = 0; x < CANVAS_SIZE; ++x)
+                for (int x = 0; x < st.size; ++x)
                 {
                     Rectangle r;
-                    r.x = layout.canvas.x + 2 * layout.scale * x;
-                    r.y = layout.canvas.y + 2 * layout.scale * y;
-                    r.width = 2*layout.scale;
-                    r.height = 2*layout.scale;
+                    r.x = layout.canvas.x + layout.pixel_size * x;
+                    r.y = layout.canvas.y + layout.pixel_size * y;
+                    r.width = layout.pixel_size;
+                    r.height = layout.pixel_size;
 
                     int col = st.mat.cells[y][x];
 
@@ -420,12 +429,12 @@ int main(void)
             // Draw grid
             if (st.grid)
             {
-                for (int x = 0; x < CANVAS_SIZE; ++x)
+                for (int x = 0; x < st.size; ++x)
                 {
                     int px = layout.canvas.x + 2*layout.scale*x + 1;
                     DrawLine(px, layout.canvas.y, px, layout.canvas.y + layout.canvas.height, GRAY);
                 }
-                for (int y = 0; y < CANVAS_SIZE; ++y)
+                for (int y = 0; y < st.size; ++y)
                 {
                     int py = layout.canvas.y + 2*layout.scale*y;
                     DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
