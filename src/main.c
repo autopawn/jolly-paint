@@ -8,6 +8,7 @@
 #define CANVAS_SIZE 32
 #define BUTTON_COUNT 5
 #define BGCOLOR RAYWHITE
+#define MAX_UNDOS 32
 
 struct layout
 {
@@ -112,9 +113,14 @@ static struct layout compute_layout(bool vertical)
     return lay;
 }
 
+struct matrix
+{
+    unsigned char cells[CANVAS_SIZE][CANVAS_SIZE];
+};
+
 struct state
 {
-    int cells[CANVAS_SIZE][CANVAS_SIZE];
+    struct matrix mat;
     int pal; // Current palette
     int col1, col2;
     bool bucket;
@@ -158,7 +164,7 @@ static void image_save(const struct state *st)
     for (int y = 0; y < CANVAS_SIZE; ++y)
     {
         for (int x = 0; x < CANVAS_SIZE; ++x)
-            ImageDrawRectangle(&img, 8*x, 8*y, 8, 8, get_color(st, st->cells[y][x]));
+            ImageDrawRectangle(&img, 8*x, 8*y, 8, 8, get_color(st, st->mat.cells[y][x]));
     }
 
     ExportImage(img, "img.png");
@@ -166,13 +172,57 @@ static void image_save(const struct state *st)
     emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','image.png')");
 }
 
+struct undostack
+{
+    struct matrix mats[MAX_UNDOS];
+    int len;
+};
+
+void undostack_save(const struct state *st, struct undostack *stack)
+{
+    // Check that currrent state is different to last saved state
+    if (stack->len > 0)
+    {
+        bool same = true;
+        for (int y = 0; y < CANVAS_SIZE; ++y)
+        {
+            for (int x = 0; x < CANVAS_SIZE; ++x)
+            {
+                if (stack->mats[stack->len - 1].cells[y][x] != st->mat.cells[y][x])
+                    same = false;
+            }
+        }
+        if (same)
+            return;
+    }
+    // Push stack down
+    if (stack->len == MAX_UNDOS)
+    {
+        for (int i = 0; i < stack->len - 1; ++i)
+            stack->mats[i] = stack->mats[i + 1];
+        
+        stack->len -= 1;
+    }
+    // Store state in the stack
+    stack->mats[stack->len] = st->mat;
+    stack->len += 1;
+}
+
+void undostack_undo(struct state *st, struct undostack *stack)
+{
+    if (stack->len < 2)
+        return;
+    stack->len -= 1;
+    st->mat = stack->mats[stack->len - 1];
+}
+
 void flood_fill(struct state *st, int x, int y, int a, int b)
 {
     if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE)
         return;
-    if (st->cells[y][x] == b || st->cells[y][x] != a)
+    if (st->mat.cells[y][x] == b || st->mat.cells[y][x] != a)
         return;
-    st->cells[y][x] = b;
+    st->mat.cells[y][x] = b;
     flood_fill(st, x + 1, y, a, b);
     flood_fill(st, x - 1, y, a, b);
     flood_fill(st, x, y + 1, a, b);
@@ -203,6 +253,8 @@ int main(void)
 
     struct state st = {.col1 = 3, .col2 = 8};
     state_load(&st);
+    struct undostack stack = {0};
+    undostack_save(&st, &stack);
 
     // Main game loop
     unsigned int frame = 0;
@@ -256,7 +308,7 @@ int main(void)
 
                 if (st.bucket)
                 {
-                    int current = st.cells[pos_y][pos_x];
+                    int current = st.mat.cells[pos_y][pos_x];
                     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
                         flood_fill(&st, pos_x, pos_y, current, st.col1);
                     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
@@ -265,18 +317,25 @@ int main(void)
                 else
                 {
                     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                        st.cells[pos_y][pos_x] = st.col1;
+                        st.mat.cells[pos_y][pos_x] = st.col1;
                     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-                        st.cells[pos_y][pos_x] = st.col2;
+                        st.mat.cells[pos_y][pos_x] = st.col2;
                 }
             }
         }
+        // Save undo checkpoint
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
+            undostack_save(&st, &stack);
+
         // Paint bucket toggle
         if (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                st.bucket = !st.bucket;
+            st.bucket = !st.bucket;
         // Grid toggle
         if (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                st.grid = !st.grid;
+            st.grid = !st.grid;
+        // Undo
+        if (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            undostack_undo(&st, &stack);
 
         // Save image
         if (CheckCollisionPointRec(mpos, layout.buttons[4]))
@@ -327,7 +386,7 @@ int main(void)
                     r.width = 2*layout.scale;
                     r.height = 2*layout.scale;
 
-                    int col = st.cells[y][x];
+                    int col = st.mat.cells[y][x];
 
                     DrawRectangleRec(r, get_color(&st, col));
                 }
