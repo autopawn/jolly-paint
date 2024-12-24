@@ -119,6 +119,7 @@ struct state
     int cells[CANVAS_SIZE][CANVAS_SIZE];
     int pal; // Current palette
     int col1, col2;
+    bool grid;
 };
 
 static Color get_color(const struct state *st, int idx)
@@ -184,6 +185,12 @@ int main(void)
                 st.cells[pos_y][pos_x] = st.col2;
         }
 
+        if (CheckCollisionPointRec(mpos, layout.buttons[1]))
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                st.grid = !st.grid;
+        }
+
         // Draw
         BeginDrawing();
 
@@ -233,22 +240,34 @@ int main(void)
             }
 
             // Draw grid
-            for (int x = 0; x < CANVAS_SIZE; ++x)
+            if (st.grid)
             {
-                int px = layout.canvas.x + 2*layout.scale*x + 1;
-                DrawLine(px, layout.canvas.y, px, layout.canvas.y + layout.canvas.height, GRAY);
-            }
-            for (int y = 0; y < CANVAS_SIZE; ++y)
-            {
-                int py = layout.canvas.y + 2*layout.scale*y;
-                DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
+                for (int x = 0; x < CANVAS_SIZE; ++x)
+                {
+                    int px = layout.canvas.x + 2*layout.scale*x + 1;
+                    DrawLine(px, layout.canvas.y, px, layout.canvas.y + layout.canvas.height, GRAY);
+                }
+                for (int y = 0; y < CANVAS_SIZE; ++y)
+                {
+                    int py = layout.canvas.y + 2*layout.scale*y;
+                    DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
+                }
             }
 
             // Draw buttons
+            int scale = layout.scale;
             for (int t = 0; t < 4; ++t)
-            {
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
-            }
+
+            // Button 1 (grid toggle)
+            int gx = layout.buttons[1].x;
+            int gy = layout.buttons[1].y;
+            for (int x = 1; x <= 3; x++)
+                DrawLine(gx + x*scale, gy + 1, gx + x*scale, gy + 4*scale - 1, DARKGRAY);
+            for (int y = 1; y <= 3; y++)
+                DrawLine(gx + 1,  gy + y*scale, gx + 4*scale - 1, gy + y*scale, DARKGRAY);
+            if (!st.grid)
+                DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
 
         EndDrawing();
     }
