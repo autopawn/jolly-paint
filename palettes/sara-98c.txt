@@ -1,0 +1,21 @@
+;paint.net Palette File
+;Downloaded from Lospec.com/palette-list
+;Palette Name: SARA-98C
+;Description: Another palette in PC-98 specs: 16 colors in 12-bit RGB. This time it's whitish-orange skintones, reds, purples and teal, in that order of importance. All three ramps interlock in brightness and join at the dark end, the light end is yellowish/cream. I developed the palette in GrafX2 with heavy use of DawnBringer's palette analysis tool.
+;Colors: 16
+FFf6f2ea
+FFead2ba
+FFeeae8d
+FFde8165
+FFb6444c
+FF811830
+FF4c041c
+FF140008
+FF280c38
+FF3c1871
+FF69448d
+FFa175b2
+FF91aaca
+FF4c79a5
+FF144469
+FF041455

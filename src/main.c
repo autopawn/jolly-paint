@@ -124,9 +124,9 @@ static struct layout compute_layout(int size, bool vertical)
     }
     for (int i = 0; i < ARRAY_SIZE(PALETTES); ++i)
     {
-        lay.palette_buttons[i].x = 1;
+        lay.palette_buttons[i].x = 2;
         lay.palette_buttons[i].y = 11 + (4 + 1)*i;
-        lay.palette_buttons[i].width = 64;
+        lay.palette_buttons[i].width = 60;
         lay.palette_buttons[i].height = 4;
     }
 
@@ -345,6 +345,12 @@ int main(void)
                         && CheckCollisionPointRec(mpos, layout.size_buttons[i]))
                     st.size = SIZE_OPTIONS[i];
             }
+            for (int i = 0; i < ARRAY_SIZE(PALETTES); ++i)
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)
+                        && CheckCollisionPointRec(mpos, layout.palette_buttons[i]))
+                    st.pal = i;
+            }
         }
         else
         {
@@ -525,8 +531,8 @@ int main(void)
                     for (int c = 0; c < 16; ++c)
                     {
                         DrawRectangle(
-                            rec.x + 16*layout.scale + c*3*layout.scale, rec.y,
-                            3*layout.scale, rec.height, GetColor(PALETTES[i].colors[c]));
+                            rec.x + 28*layout.scale + c*2*layout.scale, rec.y,
+                            2*layout.scale, rec.height, GetColor(PALETTES[i].colors[c]));
                     }
                 }
             }
