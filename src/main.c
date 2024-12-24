@@ -479,12 +479,12 @@ int main(void)
             {
                 for (int x = 0; x < st.size; ++x)
                 {
-                    int px = layout.canvas.x + 2*layout.scale*x + 1;
+                    int px = layout.canvas.x + x*layout.pixel_size + 1;
                     DrawLine(px, layout.canvas.y, px, layout.canvas.y + layout.canvas.height, GRAY);
                 }
                 for (int y = 0; y < st.size; ++y)
                 {
-                    int py = layout.canvas.y + 2*layout.scale*y;
+                    int py = layout.canvas.y + y*layout.pixel_size;
                     DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
                 }
             }
