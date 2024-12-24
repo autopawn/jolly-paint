@@ -16,6 +16,7 @@ struct layout
     int scale;
     int pixel_size;
     Rectangle canvas;
+    Rectangle board;
     Rectangle palette;
     Rectangle current;
     Rectangle buttons[BUTTON_COUNT];
@@ -110,6 +111,8 @@ static struct layout compute_layout(int size, bool vertical)
     rectangle_scale(&lay.palette, offset_x, offset_y, scale);
     for (int t = 0; t < BUTTON_COUNT; ++t)
         rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
+
+    lay.board = lay.canvas;
 
     lay.pixel_size = (int)(lay.canvas.width/size);
     lay.canvas.x += (int)(.5*(lay.canvas.width - lay.pixel_size * size));
@@ -264,6 +267,8 @@ int main(void)
     struct undostack stack = {0};
     undostack_save(&st, &stack);
 
+    bool options = false;
+
     // Main game loop
     unsigned int frame = 0;
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -297,37 +302,43 @@ int main(void)
             }
         }
 
-        Vector2 mdelta = GetMouseDelta();
-        for (int t = 0; t <= 20; t++)
+        if (options)
         {
-            float alpha = t/20.0f;
-            Vector2 midpos;
-            midpos.x = mpos.x - mdelta.x*(1-alpha);
-            midpos.y = mpos.y - mdelta.y*(1-alpha);
-            if (CheckCollisionPointRec(midpos, layout.canvas))
+        }
+        else
+        {
+            Vector2 mdelta = GetMouseDelta();
+            for (int t = 0; t <= 20; t++)
             {
-                int pos_x = (midpos.x - layout.canvas.x)/layout.pixel_size;
-                int pos_y = (midpos.y - layout.canvas.y)/layout.pixel_size;
-
-                if (pos_x < 0) pos_x = 0;
-                if (pos_x >= st.size) pos_x = st.size - 1;
-                if (pos_y < 0) pos_y = 0;
-                if (pos_y >= st.size) pos_y = st.size - 1;
-
-                if (st.bucket)
+                float alpha = t/20.0f;
+                Vector2 midpos;
+                midpos.x = mpos.x - mdelta.x*(1-alpha);
+                midpos.y = mpos.y - mdelta.y*(1-alpha);
+                if (CheckCollisionPointRec(midpos, layout.canvas))
                 {
-                    int current = st.mat.cells[pos_y][pos_x];
-                    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                        flood_fill(&st, pos_x, pos_y, current, st.col1);
-                    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-                        flood_fill(&st, pos_x, pos_y, current, st.col2);
-                }
-                else
-                {
-                    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                        st.mat.cells[pos_y][pos_x] = st.col1;
-                    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-                        st.mat.cells[pos_y][pos_x] = st.col2;
+                    int pos_x = (midpos.x - layout.canvas.x)/layout.pixel_size;
+                    int pos_y = (midpos.y - layout.canvas.y)/layout.pixel_size;
+
+                    if (pos_x < 0) pos_x = 0;
+                    if (pos_x >= st.size) pos_x = st.size - 1;
+                    if (pos_y < 0) pos_y = 0;
+                    if (pos_y >= st.size) pos_y = st.size - 1;
+
+                    if (st.bucket)
+                    {
+                        int current = st.mat.cells[pos_y][pos_x];
+                        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                            flood_fill(&st, pos_x, pos_y, current, st.col1);
+                        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                            flood_fill(&st, pos_x, pos_y, current, st.col2);
+                    }
+                    else
+                    {
+                        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                            st.mat.cells[pos_y][pos_x] = st.col1;
+                        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                            st.mat.cells[pos_y][pos_x] = st.col2;
+                    }
                 }
             }
         }
@@ -352,6 +363,9 @@ int main(void)
         // Undo
         if (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             undostack_undo(&st, &stack);
+        // Options toggle
+        if (CheckCollisionPointRec(mpos, layout.buttons[3]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            options = !options;
 
         // Save image
         if (CheckCollisionPointRec(mpos, layout.buttons[4]))
@@ -441,6 +455,12 @@ int main(void)
                 }
             }
 
+            // Draw options
+            if (options)
+            {
+                DrawRectangleRec(layout.board, Fade(RAYWHITE, 0.8));
+            }
+
             // Draw buttons
             int scale = layout.scale;
             for (int t = 0; t < BUTTON_COUNT; ++t)
@@ -501,16 +521,30 @@ int main(void)
                 DrawLine(x - s, y + s - .5, x, y + s - .5, col);
             }
 
-            // Button 4 (save icon)
-            Rectangle rec = rect_grow(layout.buttons[4], -2);
-            DrawRectangleRec(rec, BLUE);
-            rec.height /= 4;
-            rec.width /= 2;
-            rec.x += rec.width/2;
-            DrawRectangleRec(rec, GRAY);
-            rec.y += 2*rec.height;
-            rec.height *= 2;
-            DrawRectangleRec(rec, GRAY);
+            { // Button 3 (options)
+                Rectangle rec = layout.buttons[3];
+                if (options)
+                    DrawRectangleRec(rec, YELLOW);
+                rec = rect_grow(rec, -1);
+                for (int t = 0; t < 6; ++t)
+                    DrawCircleSector((Vector2){rec.x + rec.width/2, rec.y + rec.height/2},
+                            rec.width/2, 60*t + 15, 60*t + 45, 6, DARKGRAY);
+                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.35, DARKGRAY);
+                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.2,
+                        options ? YELLOW : BGCOLOR);
+            }
+
+            { // Button 4 (save icon)
+                Rectangle rec = rect_grow(layout.buttons[4], -2);
+                DrawRectangleRec(rec, BLUE);
+                rec.height /= 4;
+                rec.width /= 2;
+                rec.x += rec.width/2;
+                DrawRectangleRec(rec, GRAY);
+                rec.y += 2*rec.height;
+                rec.height *= 2;
+                DrawRectangleRec(rec, GRAY);
+            }
 
         EndDrawing();
 
