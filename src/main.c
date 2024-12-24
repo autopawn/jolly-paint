@@ -184,22 +184,29 @@ int main(void)
             }
         }
 
-        if (CheckCollisionPointRec(mpos, layout.canvas))
+        Vector2 mdelta = GetMouseDelta();
+        for (int t = 0; t <= 20; t++)
         {
-            int pos_x = (mpos.x - layout.canvas.x)/layout.canvas.width * 32;
-            int pos_y = (mpos.y - layout.canvas.y)/layout.canvas.height * 32;
+            float alpha = t/20.0f;
+            Vector2 midpos;
+            midpos.x = mpos.x - mdelta.x*(1-alpha);
+            midpos.y = mpos.y - mdelta.y*(1-alpha);
+            if (CheckCollisionPointRec(midpos, layout.canvas))
+            {
+                int pos_x = (midpos.x - layout.canvas.x)/layout.canvas.width * 32;
+                int pos_y = (midpos.y - layout.canvas.y)/layout.canvas.height * 32;
 
-            if (pos_x < 0) pos_x = 0;
-            if (pos_x >= 32) pos_x = 31;
-            if (pos_y < 0) pos_y = 0;
-            if (pos_y >= 32) pos_y = 31;
+                if (pos_x < 0) pos_x = 0;
+                if (pos_x >= 32) pos_x = 31;
+                if (pos_y < 0) pos_y = 0;
+                if (pos_y >= 32) pos_y = 31;
 
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                st.cells[pos_y][pos_x] = st.col1;
-            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-                st.cells[pos_y][pos_x] = st.col2;
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                    st.cells[pos_y][pos_x] = st.col1;
+                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                    st.cells[pos_y][pos_x] = st.col2;
+            }
         }
-
         // Grid toggle
         if (CheckCollisionPointRec(mpos, layout.buttons[1]))
         {
