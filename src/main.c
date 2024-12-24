@@ -1,5 +1,7 @@
 #include <raylib.h>
 #include <emscripten.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "palettes.h"
 
@@ -128,6 +130,32 @@ static Color get_color(const struct state *st, int idx)
     return GetColor(palettes[st->pal].colors[idx]);
 }
 
+static void state_load(struct state *st)
+{
+    int size = 0;
+    unsigned char *data = LoadFileData("/offline/state.data", &size);
+    if (!data)
+        return;
+    if (sizeof(struct state) <= size)
+        memcpy(st, data, sizeof(struct state));
+    UnloadFileData(data);
+}
+
+static void state_save(struct state *st)
+{
+    bool lock = true;
+    SaveFileData("/offline/state.data", st, sizeof(struct state));
+
+    EM_ASM({
+        FS.syncfs(function (err) {
+            Module.setValue($0, false, "i8"); // lock -> false
+        });
+    }, &lock);
+
+    while (lock)
+        emscripten_sleep(1);
+}
+
 static void image_save(const struct state *st)
 {
     Image img = GenImageColor(32*8, 32*8, WHITE);
@@ -144,15 +172,31 @@ static void image_save(const struct state *st)
 
 int main(void)
 {
+    bool lock = true;
+    EM_ASM({
+        // Make a directory mounted as IndexedDB
+        if (!FS.analyzePath('/offline').exists){
+            FS.mkdir('/offline');
+        }
+        FS.mount(IDBFS, {}, '/offline');
+        FS.syncfs(true, function (err) {
+            Module.setValue($0, false, "i8"); // lock -> false
+        });
+    }, &lock);
+
+    while (lock)
+        emscripten_sleep(1);
+
     // Initialization
     InitWindow(400, 400, "Jolly paint");
     SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
-
     SetTargetFPS(60);
 
     struct state st = {.col1 = 3, .col2 = 8};
+    state_load(&st);
 
     // Main game loop
+    unsigned int frame = 0;
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         struct layout layout_v = compute_layout(true);
@@ -218,7 +262,10 @@ int main(void)
         if (CheckCollisionPointRec(mpos, layout.buttons[3]))
         {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
                 image_save(&st);
+                state_save(&st);
+            }
         }
 
         // Draw
@@ -311,6 +358,10 @@ int main(void)
             DrawRectangleRec(rec, GRAY);
 
         EndDrawing();
+
+        frame += 1;
+        if (frame % 60 == 0)
+            state_save(&st);
     }
 
     // De-Initialization
