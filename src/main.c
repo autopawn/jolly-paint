@@ -14,7 +14,7 @@ struct layout
     Rectangle buttons[2];
 };
 
-void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
+static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
 {
     rect->x *= scale;
     rect->y *= scale;
@@ -24,7 +24,7 @@ void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
     rect->y += offset_y;
 }
 
-Rectangle rect_grow(Rectangle rect, int growth)
+static Rectangle rect_grow(Rectangle rect, int growth)
 {
     rect.x -= growth;
     rect.y -= growth;
@@ -33,7 +33,7 @@ Rectangle rect_grow(Rectangle rect, int growth)
     return rect;
 }
 
-struct layout compute_layout(bool vertical)
+static struct layout compute_layout(bool vertical)
 {
     struct layout lay = {0};
     lay.vertical = vertical;
@@ -100,6 +100,18 @@ struct layout compute_layout(bool vertical)
     return lay;
 }
 
+struct state
+{
+    int cells[CANVAS_SIZE][CANVAS_SIZE];
+    int pal; // Current palette
+    int col1, col2;
+};
+
+static Color get_color(const struct state *st, int idx)
+{
+    return GetColor(palettes[st->pal].colors[idx]);
+}
+
 int main(void)
 {
     // Initialization
@@ -108,8 +120,7 @@ int main(void)
 
     SetTargetFPS(60);
 
-    int cells[CANVAS_SIZE][CANVAS_SIZE] = {0};
-    int pal = 0; // Current palette
+    struct state st = {.col1 = 3, .col2 = 8};
 
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -118,16 +129,44 @@ int main(void)
         struct layout layout_h = compute_layout(false);
         struct layout layout = (layout_v.scale >= layout_h.scale) ? layout_v : layout_h;
 
-        // Update
+        // Update selected colors
+        for (int c = 0; c < 16; ++c)
+        {
+            Rectangle r = layout.palette;
+            if (layout.vertical)
+            {
+                r.width /= 16;
+                r.x += r.width * c;
+            }
+            else
+            {
+                r.height /= 16;
+                r.y += r.height * c;
+            }
+
+            if (CheckCollisionPointRec(GetMousePosition(), r))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    st.col1 = c;
+                if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+                    st.col2 = c;
+            }
+        }
 
         // Draw
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
+            
             DrawRectangleLinesEx(rect_grow(layout.canvas, 1), 1, DARKGRAY);
             DrawRectangleLinesEx(rect_grow(layout.palette, 1), 1, DARKGRAY);
+
+            
             DrawRectangleLinesEx(rect_grow(layout.current[0], 1), 1, DARKGRAY);
+            DrawRectangleRec(rect_grow(layout.current[0], -1), get_color(&st, st.col1));
+            
             DrawRectangleLinesEx(rect_grow(layout.current[1], 1), 1, DARKGRAY);
+            DrawRectangleRec(rect_grow(layout.current[1], -1), get_color(&st, st.col2));
 
             for (int y = 0; y < CANVAS_SIZE; ++y)
             {
@@ -139,9 +178,9 @@ int main(void)
                     r.width = 2*layout.scale;
                     r.height = 2*layout.scale;
 
-                    int col = cells[y][x];
+                    int col = st.cells[y][x];
 
-                    DrawRectangleRec(r, GetColor(palettes[pal].colors[col]));
+                    DrawRectangleRec(r, get_color(&st, col));
                 }
             }
 
@@ -159,7 +198,7 @@ int main(void)
                     r.height /= 16;
                     r.y += r.height * c;
                 }
-                DrawRectangleRec(r, GetColor(palettes[pal].colors[c]));
+                DrawRectangleRec(r, get_color(&st, c));
             }
 
             // Draw grid
