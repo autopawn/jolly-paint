@@ -28,7 +28,7 @@ struct layout
 
     Rectangle size_buttons[ARRAY_SIZE(SIZE_OPTIONS)];
     Rectangle palette_buttons[ARRAY_SIZE(PALETTES)];
-    
+    Rectangle ok_button;
 };
 
 static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
@@ -129,6 +129,10 @@ static struct layout compute_layout(int size, bool vertical)
         lay.palette_buttons[i].width = 60;
         lay.palette_buttons[i].height = 4;
     }
+    lay.ok_button.x = 16;
+    lay.ok_button.y = 11 + (4 + 1)*(int)ARRAY_SIZE(PALETTES);
+    lay.ok_button.width = 32;
+    lay.ok_button.height = 4;
 
     rectangle_scale(&lay.canvas, offset_x, offset_y, scale);
     rectangle_scale(&lay.current, offset_x, offset_y, scale);
@@ -139,6 +143,7 @@ static struct layout compute_layout(int size, bool vertical)
         rectangle_scale(&lay.size_buttons[t], offset_x, offset_y, scale);
     for (int t = 0; t < ARRAY_SIZE(PALETTES); ++t)
         rectangle_scale(&lay.palette_buttons[t], offset_x, offset_y, scale);
+    rectangle_scale(&lay.ok_button, offset_x, offset_y, scale);
 
     lay.board = lay.canvas;
 
@@ -351,6 +356,9 @@ int main(void)
                         && CheckCollisionPointRec(mpos, layout.palette_buttons[i]))
                     st.pal = i;
             }
+            // Ok button
+            if (CheckCollisionPointRec(mpos, layout.ok_button) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                options = false;
         }
         else
         {
@@ -534,6 +542,13 @@ int main(void)
                             rec.x + 28*layout.scale + c*2*layout.scale, rec.y,
                             2*layout.scale, rec.height, GetColor(PALETTES[i].colors[c]));
                     }
+                }
+
+                {
+                    Rectangle rec = layout.ok_button;
+                    DrawRectangleRec(rec, BGCOLOR);
+                    draw_text_centered(&layout, rec, "OK", 4);
+                    DrawRectangleLinesEx(rect_grow(rec, 1), 1, DARKGRAY);
                 }
             }
 
