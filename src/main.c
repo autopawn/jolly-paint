@@ -11,7 +11,7 @@ struct layout
     Rectangle canvas;
     Rectangle palette;
     Rectangle current[2];
-    Rectangle buttons[2];
+    Rectangle buttons[4];
 };
 
 static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
@@ -71,6 +71,14 @@ static struct layout compute_layout(bool vertical)
         lay.palette.y = 1 + 32*2 + 1;
         lay.palette.width = 16*2;
         lay.palette.height = 2*2;
+        
+        for (int t = 0; t < 4; ++t)
+        {
+            lay.buttons[t].x = lay.palette.x + lay.palette.width + 1 + (4 + 1)*t;
+            lay.buttons[t].y = 1 + 32*2 + 1;
+            lay.buttons[t].width = 4;
+            lay.buttons[t].height = 4;
+        }
     }
     else
     {
@@ -86,12 +94,22 @@ static struct layout compute_layout(bool vertical)
         lay.palette.y = 1 + 4 + 1 + 4 + 1;
         lay.palette.width = 2*2;
         lay.palette.height = 16*2;
+
+        for (int t = 0; t < 4; ++t)
+        {
+            lay.buttons[t].x = 1 + 32*2 + 1; 
+            lay.buttons[t].y = lay.palette.y + lay.palette.height + 1 + (4 + 1)*t;
+            lay.buttons[t].width = 4;
+            lay.buttons[t].height = 4;
+        }
     }
 
     rectangle_scale(&lay.canvas, offset_x, offset_y, scale);
-    rectangle_scale(&lay.current[0], offset_x, offset_y, scale);
-    rectangle_scale(&lay.current[1], offset_x, offset_y, scale);
+    for (int t = 0; t < 2; ++t)
+        rectangle_scale(&lay.current[t], offset_x, offset_y, scale);
     rectangle_scale(&lay.palette, offset_x, offset_y, scale);
+    for (int t = 0; t < 4; ++t)
+        rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
 
     return lay;
 }
@@ -172,8 +190,8 @@ int main(void)
             ClearBackground(RAYWHITE);
             
             DrawRectangleLinesEx(rect_grow(layout.canvas, 1), 1, DARKGRAY);
-            DrawRectangleLinesEx(rect_grow(layout.palette, 1), 1, DARKGRAY);
 
+            DrawRectangleLinesEx(rect_grow(layout.palette, 1), 1, DARKGRAY);
             
             DrawRectangleLinesEx(rect_grow(layout.current[0], 1), 1, DARKGRAY);
             DrawRectangleRec(rect_grow(layout.current[0], -1), get_color(&st, st.col1));
@@ -224,6 +242,12 @@ int main(void)
             {
                 int py = layout.canvas.y + 2*layout.scale*y;
                 DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
+            }
+
+            // Draw buttons
+            for (int t = 0; t < 4; ++t)
+            {
+                DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
             }
 
         EndDrawing();
