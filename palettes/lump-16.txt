@@ -1,0 +1,21 @@
+;paint.net Palette File
+;Downloaded from Lospec.com/palette-list
+;Palette Name: Lump 16
+;Description: 
+;Colors: 16
+FF000000
+FF20123b
+FF451c33
+FFa8274b
+FFed7332
+FFfff167
+FFffffd9
+FF7defff
+FF2dd660
+FF2c7cc7
+FF3030a1
+FF381378
+FF8c2da6
+FFf57fc6
+FFffd7a8
+FFc8765c
