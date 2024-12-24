@@ -347,7 +347,8 @@ int main(void)
             undostack_save(&st, &stack);
 
         // Swap colors
-        if (CheckCollisionPointRec(mpos, layout.current) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_X) ||
+                (CheckCollisionPointRec(mpos, layout.current) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
         {
             int aux = st.col1;
             st.col1 = st.col2;
@@ -355,26 +356,28 @@ int main(void)
         }
 
         // Paint bucket toggle
-        if (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_P) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             st.bucket = !st.bucket;
         // Grid toggle
-        if (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_G) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             st.grid = !st.grid;
         // Undo
-        if (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_Z) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             undostack_undo(&st, &stack);
         // Options toggle
-        if (CheckCollisionPointRec(mpos, layout.buttons[3]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_O) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[3]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             options = !options;
 
         // Save image
-        if (CheckCollisionPointRec(mpos, layout.buttons[4]))
+        if (IsKeyPressed(KEY_S) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[4]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
-                image_save(&st);
-                state_save(&st);
-            }
+            image_save(&st);
+            state_save(&st);
         }
 
         // Draw
