@@ -1,6 +1,7 @@
 #include <raylib.h>
 #include <emscripten.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "palettes.h"
@@ -9,6 +10,10 @@
 #define BUTTON_COUNT 5
 #define BGCOLOR RAYWHITE
 #define MAX_UNDOS 32
+
+#define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
+
+static const int SIZE_OPTIONS[] = {16, 21, 24, 32};
 
 struct layout
 {
@@ -20,6 +25,9 @@ struct layout
     Rectangle palette;
     Rectangle current;
     Rectangle buttons[BUTTON_COUNT];
+
+    Rectangle size_buttons[ARRAY_SIZE(SIZE_OPTIONS)];
+    
 };
 
 static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
@@ -106,11 +114,21 @@ static struct layout compute_layout(int size, bool vertical)
         }
     }
 
+    for (int i = 0; i < ARRAY_SIZE(SIZE_OPTIONS); ++i)
+    {
+        lay.size_buttons[i].x = 3 + (14 + 1)*i;
+        lay.size_buttons[i].y = 4;
+        lay.size_buttons[i].width = 14;
+        lay.size_buttons[i].height = 4;
+    }
+
     rectangle_scale(&lay.canvas, offset_x, offset_y, scale);
     rectangle_scale(&lay.current, offset_x, offset_y, scale);
     rectangle_scale(&lay.palette, offset_x, offset_y, scale);
     for (int t = 0; t < BUTTON_COUNT; ++t)
         rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
+    for (int t = 0; t < ARRAY_SIZE(SIZE_OPTIONS); ++t)
+        rectangle_scale(&lay.size_buttons[t], offset_x, offset_y, scale);
 
     lay.board = lay.canvas;
 
@@ -240,6 +258,13 @@ void flood_fill(struct state *st, int x, int y, int a, int b)
     flood_fill(st, x, y - 1, a, b);
 }
 
+void draw_text_centered(const struct layout *layout, Rectangle rect, const char *text, int size)
+{
+    int font_size = size*layout->scale;
+    int w = MeasureText(text, font_size);
+    DrawText(text, rect.x + (rect.width - w)/2, rect.y + (rect.height - font_size)/2, font_size, BLACK); 
+}
+
 int main(void)
 {
     bool lock = true;
@@ -262,7 +287,7 @@ int main(void)
     SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
     SetTargetFPS(60);
 
-    struct state st = {.col1 = 8, .col2 = 3, .size = 30};
+    struct state st = {.col1 = 8, .col2 = 3, .size = 24};
     state_load(&st);
     struct undostack stack = {0};
     undostack_save(&st, &stack);
@@ -304,6 +329,12 @@ int main(void)
 
         if (options)
         {
+            for (int i = 0; i < ARRAY_SIZE(SIZE_OPTIONS); ++i)
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)
+                        && CheckCollisionPointRec(mpos, layout.size_buttons[i]))
+                    st.size = SIZE_OPTIONS[i];
+            }
         }
         else
         {
@@ -461,7 +492,17 @@ int main(void)
             // Draw options
             if (options)
             {
-                DrawRectangleRec(layout.board, Fade(RAYWHITE, 0.8));
+                DrawRectangleRec(rect_grow(layout.board, 1), Fade(RAYWHITE, 0.95));
+
+                for (int i = 0; i < ARRAY_SIZE(SIZE_OPTIONS); ++i)
+                {
+                    DrawRectangleRec(layout.size_buttons[i], st.size == SIZE_OPTIONS[i] ? YELLOW : BGCOLOR);
+                    DrawRectangleLinesEx(rect_grow(layout.size_buttons[i], 1), 1, DARKGRAY);
+
+                    char buffer[20];
+                    sprintf(buffer, "%ux%u", SIZE_OPTIONS[i], SIZE_OPTIONS[i]);
+                    draw_text_centered(&layout, layout.size_buttons[i], buffer, 4);
+                }
             }
 
             // Draw buttons
