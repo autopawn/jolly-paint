@@ -27,6 +27,7 @@ struct layout
     Rectangle buttons[BUTTON_COUNT];
 
     Rectangle size_buttons[ARRAY_SIZE(SIZE_OPTIONS)];
+    Rectangle palette_buttons[ARRAY_SIZE(PALETTES)];
     
 };
 
@@ -121,6 +122,13 @@ static struct layout compute_layout(int size, bool vertical)
         lay.size_buttons[i].width = 14;
         lay.size_buttons[i].height = 4;
     }
+    for (int i = 0; i < ARRAY_SIZE(PALETTES); ++i)
+    {
+        lay.palette_buttons[i].x = 1;
+        lay.palette_buttons[i].y = 11 + (4 + 1)*i;
+        lay.palette_buttons[i].width = 64;
+        lay.palette_buttons[i].height = 4;
+    }
 
     rectangle_scale(&lay.canvas, offset_x, offset_y, scale);
     rectangle_scale(&lay.current, offset_x, offset_y, scale);
@@ -129,6 +137,8 @@ static struct layout compute_layout(int size, bool vertical)
         rectangle_scale(&lay.buttons[t], offset_x, offset_y, scale);
     for (int t = 0; t < ARRAY_SIZE(SIZE_OPTIONS); ++t)
         rectangle_scale(&lay.size_buttons[t], offset_x, offset_y, scale);
+    for (int t = 0; t < ARRAY_SIZE(PALETTES); ++t)
+        rectangle_scale(&lay.palette_buttons[t], offset_x, offset_y, scale);
 
     lay.board = lay.canvas;
 
@@ -158,7 +168,7 @@ struct state
 
 static Color get_color(const struct state *st, int idx)
 {
-    return GetColor(palettes[st->pal].colors[idx]);
+    return GetColor(PALETTES[st->pal].colors[idx]);
 }
 
 static void state_load(struct state *st)
@@ -496,12 +506,28 @@ int main(void)
 
                 for (int i = 0; i < ARRAY_SIZE(SIZE_OPTIONS); ++i)
                 {
-                    DrawRectangleRec(layout.size_buttons[i], st.size == SIZE_OPTIONS[i] ? YELLOW : BGCOLOR);
-                    DrawRectangleLinesEx(rect_grow(layout.size_buttons[i], 1), 1, DARKGRAY);
+                    Rectangle rec = layout.size_buttons[i];
+                    DrawRectangleRec(rec, st.size == SIZE_OPTIONS[i] ? YELLOW : BGCOLOR);
+                    DrawRectangleLinesEx(rect_grow(rec, 1), 1, DARKGRAY);
 
                     char buffer[20];
                     sprintf(buffer, "%ux%u", SIZE_OPTIONS[i], SIZE_OPTIONS[i]);
-                    draw_text_centered(&layout, layout.size_buttons[i], buffer, 4);
+                    draw_text_centered(&layout, rec, buffer, 4);
+                }
+
+                for (int i = 0; i < ARRAY_SIZE(PALETTES); ++i)
+                {
+                    Rectangle rec = layout.palette_buttons[i];
+                    DrawRectangleRec(rec, st.pal == i ? YELLOW : BGCOLOR);
+                    DrawText(PALETTES[i].name, rec.x + 1, rec.y + 1, 2*layout.scale, BLACK);
+                    DrawRectangleLinesEx(rect_grow(rec, 1), 1, DARKGRAY);
+
+                    for (int c = 0; c < 16; ++c)
+                    {
+                        DrawRectangle(
+                            rec.x + 16*layout.scale + c*3*layout.scale, rec.y,
+                            3*layout.scale, rec.height, GetColor(PALETTES[i].colors[c]));
+                    }
                 }
             }
 

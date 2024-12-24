@@ -1,11 +1,8 @@
-
-#define PALETTE_COUNT 1
-
 static struct palette
 {
     const char *name;
     unsigned int colors[16];
-} palettes[PALETTE_COUNT] =
+} PALETTES[] =
 {
     {
         "Lump 16",
