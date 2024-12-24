@@ -117,6 +117,7 @@ struct state
     int cells[CANVAS_SIZE][CANVAS_SIZE];
     int pal; // Current palette
     int col1, col2;
+    bool bucket;
     bool grid;
 };
 
@@ -163,6 +164,19 @@ static void image_save(const struct state *st)
     ExportImage(img, "img.png");
     UnloadImage(img);
     emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','image.png')");
+}
+
+void flood_fill(struct state *st, int x, int y, int a, int b)
+{
+    if (x < 0 || y < 0 || x >= CANVAS_SIZE || y >= CANVAS_SIZE)
+        return;
+    if (st->cells[y][x] == b || st->cells[y][x] != a)
+        return;
+    st->cells[y][x] = b;
+    flood_fill(st, x + 1, y, a, b);
+    flood_fill(st, x - 1, y, a, b);
+    flood_fill(st, x, y + 1, a, b);
+    flood_fill(st, x, y - 1, a, b);
 }
 
 int main(void)
@@ -240,18 +254,29 @@ int main(void)
                 if (pos_y < 0) pos_y = 0;
                 if (pos_y >= 32) pos_y = 31;
 
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                    st.cells[pos_y][pos_x] = st.col1;
-                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-                    st.cells[pos_y][pos_x] = st.col2;
+                if (st.bucket)
+                {
+                    int current = st.cells[pos_y][pos_x];
+                    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                        flood_fill(&st, pos_x, pos_y, current, st.col1);
+                    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                        flood_fill(&st, pos_x, pos_y, current, st.col2);
+                }
+                else
+                {
+                    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                        st.cells[pos_y][pos_x] = st.col1;
+                    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                        st.cells[pos_y][pos_x] = st.col2;
+                }
             }
         }
+        // Paint bucket toggle
+        if (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                st.bucket = !st.bucket;
         // Grid toggle
-        if (CheckCollisionPointRec(mpos, layout.buttons[1]))
-        {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 st.grid = !st.grid;
-        }
 
         // Save image
         if (CheckCollisionPointRec(mpos, layout.buttons[4]))
@@ -344,6 +369,36 @@ int main(void)
             int scale = layout.scale;
             for (int t = 0; t < BUTTON_COUNT; ++t)
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
+
+            // Button 0 (paint bucket)
+            {
+                Rectangle rec = layout.buttons[0];
+
+                if (st.bucket)
+                    DrawRectangleRec(rec, YELLOW);
+
+                DrawEllipseLines(rec.x + .5*rec.width, rec.y + 0.3*rec.height,
+                        .3*rec.width, .2*rec.height, DARKGRAY);
+
+                rec = layout.buttons[0];
+                rec.y += 0.35 * rec.height;
+                rec.x += 0.25 * rec.width;
+                rec.width *= 0.5;
+                rec.height *= 0.6;
+                DrawRectangleRec(rec, DARKGRAY);
+                rec.height *= 0.2;
+                rec.width += 2;
+                rec.x -= 1;
+                DrawRectangleRec(rec, GRAY);
+                rec.y += rec.height * 2;
+                DrawRectangleRec(rec, GRAY);
+                rec.y += rec.height * 2;
+                DrawRectangleRec(rec, GRAY);
+                rec.width *= 0.5;
+                rec.x += rec.width/2;
+                rec.y = layout.buttons[0].y + 0.5*rec.height;
+                DrawRectangleRec(rec, GRAY);
+            }
 
             // Button 1 (grid toggle)
             int gx = layout.buttons[1].x;
