@@ -174,7 +174,6 @@ struct state
     int size;
     int pal; // Current palette
     int col1, col2;
-    bool bucket;
     bool grid;
 };
 
@@ -315,6 +314,7 @@ int main(void)
     SetTargetFPS(60);
 
     bool options = false;
+    bool bucket = false;
 
     struct state st = {.col1 = 8, .col2 = 3, .size = 24};
     bool loaded = state_load(&st);
@@ -395,7 +395,7 @@ int main(void)
                     if (pos_y < 0) pos_y = 0;
                     if (pos_y >= st.size) pos_y = st.size - 1;
 
-                    if (st.bucket)
+                    if (bucket)
                     {
                         int current = st.mat.cells[pos_y][pos_x];
                         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
@@ -429,7 +429,7 @@ int main(void)
         // Paint bucket toggle
         if (IsKeyPressed(KEY_P) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
-            st.bucket = !st.bucket;
+            bucket = !bucket;
         // Grid toggle
         if (IsKeyPressed(KEY_G) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
@@ -577,7 +577,7 @@ int main(void)
             {
                 Rectangle rec = layout.buttons[0];
 
-                if (st.bucket)
+                if (bucket)
                     DrawRectangleRec(rec, YELLOW);
 
                 DrawEllipseLines(rec.x + .5*rec.width, rec.y + 0.3*rec.height,
