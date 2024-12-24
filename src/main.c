@@ -183,15 +183,20 @@ static Color get_color(const struct state *st, int idx)
     return GetColor(PALETTES[st->pal].colors[idx]);
 }
 
-static void state_load(struct state *st)
+static bool state_load(struct state *st)
 {
     int size = 0;
     unsigned char *data = LoadFileData("/offline/state.data", &size);
     if (!data)
-        return;
-    if (sizeof(struct state) <= size)
-        memcpy(st, data, sizeof(struct state));
+        return false;
+    if (size < sizeof(struct state))
+    {
+        UnloadFileData(data);
+        return false;
+    }
+    memcpy(st, data, sizeof(struct state));
     UnloadFileData(data);
+    return true;
 }
 
 static void state_save(struct state *st)
@@ -309,12 +314,15 @@ int main(void)
     SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
     SetTargetFPS(60);
 
+    bool options = false;
+
     struct state st = {.col1 = 8, .col2 = 3, .size = 24};
-    state_load(&st);
+    bool loaded = state_load(&st);
+    if (!loaded)
+        options = true;
     struct undostack stack = {0};
     undostack_save(&st, &stack);
 
-    bool options = false;
 
     // Main game loop
     unsigned int frame = 0;
