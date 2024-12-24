@@ -198,7 +198,7 @@ static void image_save(const struct state *st)
 
     ExportImage(img, "img.png");
     UnloadImage(img);
-    emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','image.png')");
+    emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','jolly_paint_img.png')");
 }
 
 struct undostack
