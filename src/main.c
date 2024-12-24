@@ -50,7 +50,7 @@ static Rectangle rect_grow(Rectangle rect, int growth)
     return rect;
 }
 
-static struct layout compute_layout(int size, bool vertical)
+static struct layout compute_layout_oriented(int size, bool vertical)
 {
     struct layout lay = {0};
     lay.vertical = vertical;
@@ -154,6 +154,13 @@ static struct layout compute_layout(int size, bool vertical)
     lay.canvas.width = lay.pixel_size * size;
 
     return lay;
+}
+
+static struct layout compute_layout(int size)
+{
+    struct layout layout_v = compute_layout_oriented(size, true);
+    struct layout layout_h = compute_layout_oriented(size, false);
+    return (layout_v.scale >= layout_h.scale) ? layout_v : layout_h;
 }
 
 struct matrix
@@ -313,9 +320,7 @@ int main(void)
     unsigned int frame = 0;
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
-        struct layout layout_v = compute_layout(st.size, true);
-        struct layout layout_h = compute_layout(st.size, false);
-        struct layout layout = (layout_v.scale >= layout_h.scale) ? layout_v : layout_h;
+        struct layout layout = compute_layout(st.size);
         Vector2 mpos = GetMousePosition();
 
         // Update selected colors
@@ -348,7 +353,10 @@ int main(void)
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)
                         && CheckCollisionPointRec(mpos, layout.size_buttons[i]))
+                {
                     st.size = SIZE_OPTIONS[i];
+                    layout = compute_layout(st.size);
+                }
             }
             for (int i = 0; i < ARRAY_SIZE(PALETTES); ++i)
             {
