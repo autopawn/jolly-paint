@@ -17,9 +17,11 @@
 #define BUTTON_UNDO     2
 #define BUTTON_REDO     3
 #define BUTTON_BUCKET   4
-#define BUTTON_SAVE     5
-#define BUTTON_SAVE_BIG 6
-#define BUTTON_COUNT    7
+#define BUTTON_LEFT     5
+#define BUTTON_RIGHT    6
+#define BUTTON_SAVE     7
+#define BUTTON_SAVE_BIG 8
+#define BUTTON_COUNT    9
 
 #define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
 
@@ -212,6 +214,28 @@ static void state_save(struct state *st)
 
     while (lock)
         emscripten_sleep(1);
+}
+
+static void state_shift_left(struct state *st)
+{
+    for (int y = 0; y < st->size; ++y)
+    {
+        unsigned char aux = st->mat.cells[y][0];
+        for (int x = 0; x < st->size - 1; ++x)
+            st->mat.cells[y][x] = st->mat.cells[y][x + 1];
+        st->mat.cells[y][st->size - 1] = aux;
+    }
+}
+
+static void state_shift_right(struct state *st)
+{
+    for (int y = 0; y < st->size; ++y)
+    {
+        unsigned char aux = st->mat.cells[y][st->size - 1];
+        for (int x = st->size - 1; x >= 1; --x)
+            st->mat.cells[y][x] = st->mat.cells[y][x - 1];
+        st->mat.cells[y][0] = aux;
+    }
 }
 
 static void image_save(const struct state *st, bool big)
@@ -497,6 +521,19 @@ int main(void)
         if (IsKeyPressed(KEY_P) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_BUCKET]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             bucket = !bucket;
+        // Shift buttons
+        if (IsKeyPressed(KEY_LEFT) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_LEFT]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+        {
+            state_shift_left(&st);
+            undostack_save(&st, &stack);
+        }
+        if (IsKeyPressed(KEY_RIGHT) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_RIGHT]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+        {
+            state_shift_right(&st);
+            undostack_save(&st, &stack);
+        }
 
         // Save image
         bool shift_down = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
