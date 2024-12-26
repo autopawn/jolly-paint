@@ -306,7 +306,7 @@ void draw_text_centered(const struct layout *layout, Rectangle rect, const char 
 {
     int font_size = size*layout->scale;
     int w = MeasureText(text, font_size);
-    DrawText(text, rect.x + (rect.width - w)/2, rect.y + (rect.height - font_size)/2, font_size, BLACK); 
+    DrawText(text, rect.x + (rect.width - w)/2, rect.y + (rect.height - font_size)/2, font_size, DARKGRAY);
 }
 
 int main(void)
@@ -603,7 +603,7 @@ int main(void)
                 {
                     Rectangle rec = layout.palette_buttons[i];
                     DrawRectangleRec(rec, st.pal == i ? YELLOW : BGCOLOR);
-                    DrawText(PALETTES[i].name, rec.x + 1, rec.y + 1, 2*layout.scale, BLACK);
+                    DrawText(PALETTES[i].name, rec.x + 1, rec.y + 1, 2*layout.scale, DARKGRAY);
                     DrawRectangleLinesEx(rect_grow(rec, 1), 1, DARKGRAY);
 
                     for (int c = 0; c < 16; ++c)

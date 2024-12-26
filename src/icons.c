@@ -87,5 +87,5 @@ void draw_save_icon(Rectangle rec)
     DrawRectangleRec(rec, GRAY);
     rec.y += 2*rec.height;
     rec.height *= 2;
-    DrawRectangleRec(rec, GRAY);
+    DrawRectangleRec(rec, LIGHTGRAY);
 }
