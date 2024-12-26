@@ -88,7 +88,7 @@ static struct layout compute_layout_oriented(int size, bool vertical)
 
         for (int t = 1; t < BUTTON_COUNT; ++t)
         {
-            lay.buttons[t].x = 2 + (4 + 1)*(t - 1);
+            lay.buttons[t].x = 4 + (4 + 1)*(t - 1) + (t >= BUTTON_COUNT - 2) * 8;
             lay.buttons[t].y = 1 + 64 + 1 + 4 + 1;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
@@ -114,7 +114,7 @@ static struct layout compute_layout_oriented(int size, bool vertical)
         for (int t = 1; t < BUTTON_COUNT; ++t)
         {
             lay.buttons[t].x = 1 + 64 + 1 + 4 + 1;
-            lay.buttons[t].y = 2 + (4 + 1)*(t - 1);
+            lay.buttons[t].y = 4 + (4 + 1)*(t - 1) + (t >= BUTTON_COUNT - 2) * 8;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
         }
