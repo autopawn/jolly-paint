@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "palettes.h"
+#include "icons.h"
 
 #define MAX_CANVAS_SIZE 32
 #define BUTTON_COUNT 5
@@ -93,7 +94,7 @@ static struct layout compute_layout_oriented(int size, bool vertical)
 
         for (int t = 1; t < BUTTON_COUNT; ++t)
         {
-            lay.buttons[t].x = 2 + (4 + 1)*t;
+            lay.buttons[t].x = 2 + (4 + 1)*(t - 1);
             lay.buttons[t].y = 1 + 64 + 1 + 4 + 1;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
@@ -119,7 +120,7 @@ static struct layout compute_layout_oriented(int size, bool vertical)
         for (int t = 1; t < BUTTON_COUNT; ++t)
         {
             lay.buttons[t].x = 1 + 64 + 1 + 4 + 1;
-            lay.buttons[t].y = 2 + (4 + 1)*t;
+            lay.buttons[t].y = 2 + (4 + 1)*(t - 1);
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
         }
@@ -647,20 +648,8 @@ int main(void)
             if (!st.grid)
                 DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
 
-            { // Button 2 (undo)
-                Rectangle rec = layout.buttons[2];
-                Color col = stack.len >= 2 ? BLUE : GRAY;
-                int s = rec.width*.3;
-                int x = rec.x + .5*rec.width;
-                int y = rec.y + .6*rec.height;
-
-                DrawCircleLines(x, y, s, col);
-                rec.width /= 2;
-                DrawRectangleRec(rec, BGCOLOR);
-                DrawLine(x - .5*s, y - s, x, y - s - .5*s, col);
-                DrawLine(x - .5*s, y - s, x, y - s + .5*s, col);
-                DrawLine(x - s, y + s - .5, x, y + s - .5, col);
-            }
+            // Button 2 (undo)
+            draw_backwards_arrow_button(layout.buttons[2], BGCOLOR, stack.len >= 2, false);
 
             { // Button 0 (options)
                 Rectangle rec = layout.buttons[0];
