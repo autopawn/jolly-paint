@@ -273,17 +273,27 @@ void undostack_save(const struct state *st, struct undostack *stack)
     stack->redo_len = stack->len;
 }
 
+bool undostack_can_undo(const struct undostack *stack)
+{
+    return stack->len >= 2;
+}
+
 void undostack_undo(struct state *st, struct undostack *stack)
 {
-    if (stack->len < 2)
+    if (!undostack_can_undo(stack))
         return;
     stack->len -= 1;
     st->mat = stack->mats[stack->len - 1];
 }
 
+bool undostack_can_redo(const struct undostack *stack)
+{
+    return stack->len < stack->redo_len;
+}
+
 void undostack_redo(struct state *st, struct undostack *stack)
 {
-    if (stack->len >= stack->redo_len)
+    if (!undostack_can_redo(stack))
         return;
     st->mat = stack->mats[stack->len];
     stack->len += 1;
@@ -628,12 +638,14 @@ int main(void)
 
             draw_gear(layout.buttons[BUTTON_OPTIONS], BGCOLOR, options);
             draw_grid(layout.buttons[BUTTON_GRID], st.grid);
-            draw_backwards_arrow_button(layout.buttons[BUTTON_UNDO], BGCOLOR, stack.len >= 2, false);
-            draw_backwards_arrow_button(layout.buttons[BUTTON_REDO], BGCOLOR, stack.len < stack.redo_len, true);
+            draw_backwards_arrow_button(layout.buttons[BUTTON_UNDO], BGCOLOR,
+                    undostack_can_undo(&stack), false);
+            draw_backwards_arrow_button(layout.buttons[BUTTON_REDO], BGCOLOR,
+                    undostack_can_redo(&stack), true);
             draw_paint_bucket(layout.buttons[BUTTON_BUCKET], bucket);
             draw_save_icon(layout.buttons[BUTTON_SAVE]);
-            draw_save_icon(layout.buttons[BUTTON_SAVE_BIG]);
 
+            draw_save_icon(layout.buttons[BUTTON_SAVE_BIG]);
             Rectangle rec = layout.buttons[BUTTON_SAVE_BIG];
             rec.height /= 2;
             rec.y += rec.height;
