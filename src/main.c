@@ -58,8 +58,8 @@ static struct layout compute_layout_oriented(int size, bool vertical)
     int size_w = GetScreenWidth();
     int size_h = GetScreenHeight();
 
-    int required_w = 1 + 64 + 1 + (vertical ? 0 : 2*2 + 1);
-    int required_h = 1 + 64 + 1 + (vertical ? 2*2 + 1 : 0);
+    int required_w = 1 + 64 + 1 + (vertical ? 0 : 4 + 1 + 4 + 1);
+    int required_h = 1 + 64 + 1 + (vertical ? 4 + 1 + 4 + 1 : 0);
 
     int scale_w = size_w / required_w;
     int scale_h = size_h / required_h;
@@ -81,15 +81,20 @@ static struct layout compute_layout_oriented(int size, bool vertical)
         lay.current.width = 4;
         lay.current.height = 4;
 
-        lay.palette.x = 2 + 4 + 1;
+        lay.palette.x = 2 + 4 + 3;
         lay.palette.y = 1 + 64 + 1;
-        lay.palette.width = 16*2;
+        lay.palette.width = 16*3;
         lay.palette.height = 2*2;
-        
-        for (int t = 0; t < BUTTON_COUNT; ++t)
+
+        lay.buttons[0].x = required_w - 2 - 4;
+        lay.buttons[0].y = 1 + 64 + 1;
+        lay.buttons[0].width = 4;
+        lay.buttons[0].height = 4;
+
+        for (int t = 1; t < BUTTON_COUNT; ++t)
         {
-            lay.buttons[t].x = lay.palette.x + lay.palette.width + 1 + (4 + 1)*t;
-            lay.buttons[t].y = 1 + 64 + 1;
+            lay.buttons[t].x = 2 + (4 + 1)*t;
+            lay.buttons[t].y = 1 + 64 + 1 + 4 + 1;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
         }
@@ -102,14 +107,19 @@ static struct layout compute_layout_oriented(int size, bool vertical)
         lay.current.height = 4;
 
         lay.palette.x = 1 + 64 + 1;
-        lay.palette.y = 2 + 4 + 1;
+        lay.palette.y = 2 + 4 + 3;
         lay.palette.width = 2*2;
-        lay.palette.height = 16*2;
+        lay.palette.height = 16*3;
 
-        for (int t = 0; t < BUTTON_COUNT; ++t)
+        lay.buttons[0].x = 1 + 64 + 1;
+        lay.buttons[0].y = required_h - 2 - 4;
+        lay.buttons[0].width = 4;
+        lay.buttons[0].height = 4;
+
+        for (int t = 1; t < BUTTON_COUNT; ++t)
         {
-            lay.buttons[t].x = 1 + 64 + 1; 
-            lay.buttons[t].y = lay.palette.y + lay.palette.height + 1 + (4 + 1)*t;
+            lay.buttons[t].x = 1 + 64 + 1 + 4 + 1;
+            lay.buttons[t].y = 2 + (4 + 1)*t;
             lay.buttons[t].width = 4;
             lay.buttons[t].height = 4;
         }
@@ -450,10 +460,10 @@ int main(void)
             st.col2 = aux;
         }
 
-        // Paint bucket toggle
-        if (IsKeyPressed(KEY_P) ||
+        // Options toggle
+        if (IsKeyPressed(KEY_O) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
-            bucket = !bucket;
+            options = !options;
         // Grid toggle
         if (IsKeyPressed(KEY_G) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
@@ -462,10 +472,10 @@ int main(void)
         if (IsKeyPressed(KEY_Z) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             undostack_undo(&st, &stack);
-        // Options toggle
-        if (IsKeyPressed(KEY_O) ||
+        // Paint bucket toggle
+        if (IsKeyPressed(KEY_P) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[3]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
-            options = !options;
+            bucket = !bucket;
 
         // Save image
         if (IsKeyPressed(KEY_S) ||
@@ -597,9 +607,9 @@ int main(void)
             for (int t = 0; t < BUTTON_COUNT; ++t)
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
 
-            // Button 0 (paint bucket)
+            // Button 3 (paint bucket)
             {
-                Rectangle rec = layout.buttons[0];
+                Rectangle rec = layout.buttons[3];
 
                 if (bucket)
                     DrawRectangleRec(rec, YELLOW);
@@ -607,7 +617,7 @@ int main(void)
                 DrawEllipseLines(rec.x + .5*rec.width, rec.y + 0.3*rec.height,
                         .3*rec.width, .2*rec.height, DARKGRAY);
 
-                rec = layout.buttons[0];
+                rec = layout.buttons[3];
                 rec.y += 0.35 * rec.height;
                 rec.x += 0.25 * rec.width;
                 rec.width *= 0.5;
@@ -623,7 +633,7 @@ int main(void)
                 DrawRectangleRec(rec, GRAY);
                 rec.width *= 0.5;
                 rec.x += rec.width/2;
-                rec.y = layout.buttons[0].y + 0.5*rec.height;
+                rec.y = layout.buttons[3].y + 0.5*rec.height;
                 DrawRectangleRec(rec, GRAY);
             }
 
@@ -652,8 +662,8 @@ int main(void)
                 DrawLine(x - s, y + s - .5, x, y + s - .5, col);
             }
 
-            { // Button 3 (options)
-                Rectangle rec = layout.buttons[3];
+            { // Button 0 (options)
+                Rectangle rec = layout.buttons[0];
                 if (options)
                     DrawRectangleRec(rec, YELLOW);
                 rec = rect_grow(rec, -1);
