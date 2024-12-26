@@ -12,16 +12,18 @@
 #define BGCOLOR RAYWHITE
 #define MAX_UNDOS 32
 
-#define BUTTON_OPTIONS  0
-#define BUTTON_GRID     1
-#define BUTTON_UNDO     2
-#define BUTTON_REDO     3
-#define BUTTON_BUCKET   4
-#define BUTTON_LEFT     5
-#define BUTTON_RIGHT    6
-#define BUTTON_SAVE     7
-#define BUTTON_SAVE_BIG 8
-#define BUTTON_COUNT    9
+#define BUTTON_OPTIONS   0
+#define BUTTON_GRID      1
+#define BUTTON_UNDO      2
+#define BUTTON_REDO      3
+#define BUTTON_BUCKET    4
+#define BUTTON_LEFT      5
+#define BUTTON_RIGHT     6
+#define BUTTON_UP        7
+#define BUTTON_DOWN      8
+#define BUTTON_SAVE      9
+#define BUTTON_SAVE_BIG 10
+#define BUTTON_COUNT    11
 
 #define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
 
@@ -235,6 +237,28 @@ static void state_shift_right(struct state *st)
         for (int x = st->size - 1; x >= 1; --x)
             st->mat.cells[y][x] = st->mat.cells[y][x - 1];
         st->mat.cells[y][0] = aux;
+    }
+}
+
+static void state_shift_up(struct state *st)
+{
+    for (int x = 0; x < st->size; ++x)
+    {
+        unsigned char aux = st->mat.cells[0][x];
+        for (int y = 0; y < st->size - 1; ++y)
+            st->mat.cells[y][x] = st->mat.cells[y + 1][x];
+        st->mat.cells[st->size - 1][x] = aux;
+    }
+}
+
+static void state_shift_down(struct state *st)
+{
+    for (int x = 0; x < st->size; ++x)
+    {
+        unsigned char aux = st->mat.cells[st->size - 1][x];
+        for (int y = st->size - 1; y >= 1; --y)
+            st->mat.cells[y][x] = st->mat.cells[y - 1][x];
+        st->mat.cells[0][x] = aux;
     }
 }
 
@@ -532,6 +556,18 @@ int main(void)
                 (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_RIGHT]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
         {
             state_shift_right(&st);
+            undostack_save(&st, &stack);
+        }
+        if (IsKeyPressed(KEY_UP) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_UP]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+        {
+            state_shift_up(&st);
+            undostack_save(&st, &stack);
+        }
+        if (IsKeyPressed(KEY_DOWN) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_DOWN]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+        {
+            state_shift_down(&st);
             undostack_save(&st, &stack);
         }
 
