@@ -12,13 +12,14 @@
 #define BGCOLOR RAYWHITE
 #define MAX_UNDOS 32
 
-#define BUTTON_OPTIONS 0
-#define BUTTON_GRID    1
-#define BUTTON_UNDO    2
-#define BUTTON_REDO    3
-#define BUTTON_BUCKET  4
-#define BUTTON_SAVE    5
-#define BUTTON_COUNT   6
+#define BUTTON_OPTIONS  0
+#define BUTTON_GRID     1
+#define BUTTON_UNDO     2
+#define BUTTON_REDO     3
+#define BUTTON_BUCKET   4
+#define BUTTON_SAVE     5
+#define BUTTON_SAVE_BIG 6
+#define BUTTON_COUNT    7
 
 #define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
 
@@ -213,18 +214,23 @@ static void state_save(struct state *st)
         emscripten_sleep(1);
 }
 
-static void image_save(const struct state *st)
+static void image_save(const struct state *st, bool big)
 {
-    Image img = GenImageColor(st->size*8, st->size*8, WHITE);
+    int scale = big ? 16 : 1;
+    
+    Image img = GenImageColor(st->size*scale, st->size*scale, WHITE);
     for (int y = 0; y < st->size; ++y)
     {
         for (int x = 0; x < st->size; ++x)
-            ImageDrawRectangle(&img, 8*x, 8*y, 8, 8, get_color(st, st->mat.cells[y][x]));
+            ImageDrawRectangle(&img, scale*x, scale*y, scale, scale, get_color(st, st->mat.cells[y][x]));
     }
 
     ExportImage(img, "img.png");
     UnloadImage(img);
-    emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','jolly_paint_img.png')");
+    if (big)
+        emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','jolly_paint_img_big.png')");
+    else
+        emscripten_run_script("saveFileFromMemoryFSToDisk('img.png','jolly_paint_img.png')");
 }
 
 struct undostack
@@ -483,10 +489,18 @@ int main(void)
             bucket = !bucket;
 
         // Save image
-        if (IsKeyPressed(KEY_S) ||
+        bool shift_down = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+        if ((!shift_down && IsKeyPressed(KEY_S)) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_SAVE]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
         {
-            image_save(&st);
+            image_save(&st, false);
+            state_save(&st);
+        }
+        // Save image (big)
+        if ((shift_down && IsKeyPressed(KEY_S)) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_SAVE_BIG]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+        {
+            image_save(&st, true);
             state_save(&st);
         }
 
@@ -618,6 +632,12 @@ int main(void)
             draw_backwards_arrow_button(layout.buttons[BUTTON_REDO], BGCOLOR, stack.len < stack.redo_len, true);
             draw_paint_bucket(layout.buttons[BUTTON_BUCKET], bucket);
             draw_save_icon(layout.buttons[BUTTON_SAVE]);
+            draw_save_icon(layout.buttons[BUTTON_SAVE_BIG]);
+
+            Rectangle rec = layout.buttons[BUTTON_SAVE_BIG];
+            rec.height /= 2;
+            rec.y += rec.height;
+            draw_text_centered(&layout, rec, "x16", 2);
 
         }
         EndDrawing();
