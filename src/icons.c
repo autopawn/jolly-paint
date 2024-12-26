@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-void draw_backwards_arrow_button(Rectangle rec, Color background, bool avail, bool mirror)
+void draw_backwards_arrow(Rectangle rec, Color background, bool avail, bool mirror)
 {
     Color col = avail ? BLUE : GRAY;
     int s = rec.width*.3;
@@ -20,6 +20,39 @@ void draw_backwards_arrow_button(Rectangle rec, Color background, bool avail, bo
     DrawLine(x - mx*.5*s, y - s, x, y - s - .5*s, col);
     DrawLine(x - mx*.5*s, y - s, x, y - s + .5*s, col);
     DrawLine(x - mx*s, y + s - .5, x, y + s - .5, col);
+}
+
+void draw_arrow(Rectangle rec, int dir)
+{
+    Color col = DARKBLUE;
+    int s = rec.width*.35;
+    int x = rec.x + .5*rec.width;
+    int y = rec.y + .5*rec.height;
+
+    if (dir == 0)
+    {
+        DrawLine(x - s, y, x + s, y, col);
+        DrawLine(x, y - s, x + s, y, col);
+        DrawLine(x, y + s, x + s, y, col);
+    }
+    if (dir == 1)
+    {
+        DrawLine(x - s, y, x + s, y, col);
+        DrawLine(x, y - s, x - s, y, col);
+        DrawLine(x, y + s, x - s, y, col);
+    }
+    if (dir == 2)
+    {
+        DrawLine(x, y - s, x, y + s, col);
+        DrawLine(x - s, y, x, y - s, col);
+        DrawLine(x + s, y, x, y - s, col);
+    }
+    if (dir == 3)
+    {
+        DrawLine(x, y - s, x, y + s, col);
+        DrawLine(x - s, y, x, y + s, col);
+        DrawLine(x + s, y, x, y + s, col);
+    }
 }
 
 void draw_paint_bucket(Rectangle rec, bool enabled)

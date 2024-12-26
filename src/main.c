@@ -711,11 +711,17 @@ int main(void)
 
             draw_gear(layout.buttons[BUTTON_OPTIONS], BGCOLOR, options);
             draw_grid(layout.buttons[BUTTON_GRID], st.grid);
-            draw_backwards_arrow_button(layout.buttons[BUTTON_UNDO], BGCOLOR,
+            draw_backwards_arrow(layout.buttons[BUTTON_UNDO], BGCOLOR,
                     undostack_can_undo(&stack), false);
-            draw_backwards_arrow_button(layout.buttons[BUTTON_REDO], BGCOLOR,
+            draw_backwards_arrow(layout.buttons[BUTTON_REDO], BGCOLOR,
                     undostack_can_redo(&stack), true);
             draw_paint_bucket(layout.buttons[BUTTON_BUCKET], bucket);
+
+            draw_arrow(layout.buttons[BUTTON_RIGHT], 0);
+            draw_arrow(layout.buttons[BUTTON_LEFT], 1);
+            draw_arrow(layout.buttons[BUTTON_UP], 2);
+            draw_arrow(layout.buttons[BUTTON_DOWN], 3);
+
             draw_save_icon(layout.buttons[BUTTON_SAVE]);
 
             draw_save_icon(layout.buttons[BUTTON_SAVE_BIG]);
