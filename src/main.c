@@ -9,9 +9,15 @@
 #include "icons.h"
 
 #define MAX_CANVAS_SIZE 32
-#define BUTTON_COUNT 5
 #define BGCOLOR RAYWHITE
 #define MAX_UNDOS 32
+
+#define BUTTON_OPTIONS 0
+#define BUTTON_GRID    1
+#define BUTTON_UNDO    2
+#define BUTTON_BUCKET  3
+#define BUTTON_SAVE    4
+#define BUTTON_COUNT   5
 
 #define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
 
@@ -445,24 +451,24 @@ int main(void)
 
         // Options toggle
         if (IsKeyPressed(KEY_O) ||
-                (CheckCollisionPointRec(mpos, layout.buttons[0]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_OPTIONS]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             options = !options;
         // Grid toggle
         if (IsKeyPressed(KEY_G) ||
-                (CheckCollisionPointRec(mpos, layout.buttons[1]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_GRID]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             st.grid = !st.grid;
         // Undo
         if (IsKeyPressed(KEY_Z) ||
-                (CheckCollisionPointRec(mpos, layout.buttons[2]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_UNDO]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             undostack_undo(&st, &stack);
         // Paint bucket toggle
         if (IsKeyPressed(KEY_P) ||
-                (CheckCollisionPointRec(mpos, layout.buttons[3]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_BUCKET]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             bucket = !bucket;
 
         // Save image
         if (IsKeyPressed(KEY_S) ||
-                (CheckCollisionPointRec(mpos, layout.buttons[4]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_SAVE]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
         {
             image_save(&st);
             state_save(&st);
@@ -470,6 +476,7 @@ int main(void)
 
         // Draw
         BeginDrawing();
+        {
 
             ClearBackground(BGCOLOR);
             
@@ -589,21 +596,13 @@ int main(void)
             for (int t = 0; t < BUTTON_COUNT; ++t)
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
 
-            // Button 0 (options)
-            draw_gear(layout.buttons[0], BGCOLOR, options);
+            draw_gear(layout.buttons[BUTTON_OPTIONS], BGCOLOR, options);
+            draw_grid(layout.buttons[BUTTON_GRID], st.grid);
+            draw_backwards_arrow_button(layout.buttons[BUTTON_UNDO], BGCOLOR, stack.len >= 2, false);
+            draw_paint_bucket(layout.buttons[BUTTON_BUCKET], bucket);
+            draw_save_icon(layout.buttons[BUTTON_SAVE]);
 
-            // Button 1 (grid toggle)
-            draw_grid(layout.buttons[1], st.grid);
-
-            // Button 2 (undo)
-            draw_backwards_arrow_button(layout.buttons[2], BGCOLOR, stack.len >= 2, false);
-
-            // Button 3 (paint bucket)
-            draw_paint_bucket(layout.buttons[3], bucket);
-
-            // Button 4 (save icon)
-            draw_save_icon(layout.buttons[4]);
-
+        }
         EndDrawing();
 
         frame += 1;
