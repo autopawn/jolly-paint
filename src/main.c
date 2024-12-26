@@ -15,9 +15,10 @@
 #define BUTTON_OPTIONS 0
 #define BUTTON_GRID    1
 #define BUTTON_UNDO    2
-#define BUTTON_BUCKET  3
-#define BUTTON_SAVE    4
-#define BUTTON_COUNT   5
+#define BUTTON_REDO    3
+#define BUTTON_BUCKET  4
+#define BUTTON_SAVE    5
+#define BUTTON_COUNT   6
 
 #define ARRAY_SIZE(X) (sizeof((X))/sizeof((X)[0]))
 
@@ -229,7 +230,10 @@ static void image_save(const struct state *st)
 struct undostack
 {
     struct matrix mats[MAX_UNDOS];
+    // States saved to undo (the top one is the current one).
     int len;
+    // Last valid length for redos.
+    int redo_len;
 };
 
 void undostack_save(const struct state *st, struct undostack *stack)
@@ -260,6 +264,7 @@ void undostack_save(const struct state *st, struct undostack *stack)
     // Store state in the stack
     stack->mats[stack->len] = st->mat;
     stack->len += 1;
+    stack->redo_len = stack->len;
 }
 
 void undostack_undo(struct state *st, struct undostack *stack)
@@ -268,6 +273,14 @@ void undostack_undo(struct state *st, struct undostack *stack)
         return;
     stack->len -= 1;
     st->mat = stack->mats[stack->len - 1];
+}
+
+void undostack_redo(struct state *st, struct undostack *stack)
+{
+    if (stack->len >= stack->redo_len)
+        return;
+    st->mat = stack->mats[stack->len];
+    stack->len += 1;
 }
 
 void flood_fill(struct state *st, int x, int y, int a, int b)
@@ -461,6 +474,9 @@ int main(void)
         if (IsKeyPressed(KEY_Z) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_UNDO]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
             undostack_undo(&st, &stack);
+        if (IsKeyPressed(KEY_Y) ||
+                (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_REDO]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
+            undostack_redo(&st, &stack);
         // Paint bucket toggle
         if (IsKeyPressed(KEY_P) ||
                 (CheckCollisionPointRec(mpos, layout.buttons[BUTTON_BUCKET]) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
@@ -599,6 +615,7 @@ int main(void)
             draw_gear(layout.buttons[BUTTON_OPTIONS], BGCOLOR, options);
             draw_grid(layout.buttons[BUTTON_GRID], st.grid);
             draw_backwards_arrow_button(layout.buttons[BUTTON_UNDO], BGCOLOR, stack.len >= 2, false);
+            draw_backwards_arrow_button(layout.buttons[BUTTON_REDO], BGCOLOR, stack.len < stack.redo_len, true);
             draw_paint_bucket(layout.buttons[BUTTON_BUCKET], bucket);
             draw_save_icon(layout.buttons[BUTTON_SAVE]);
 
