@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "palettes.h"
+#include "utils.h"
 #include "icons.h"
 
 #define MAX_CANVAS_SIZE 32
@@ -31,25 +32,6 @@ struct layout
     Rectangle palette_buttons[ARRAY_SIZE(PALETTES)];
     Rectangle ok_button;
 };
-
-static void rectangle_scale(Rectangle *rect, int offset_x, int offset_y, int scale)
-{
-    rect->x *= scale;
-    rect->y *= scale;
-    rect->width *= scale;
-    rect->height *= scale;
-    rect->x += offset_x;
-    rect->y += offset_y;
-}
-
-static Rectangle rect_grow(Rectangle rect, int growth)
-{
-    rect.x -= growth;
-    rect.y -= growth;
-    rect.width += 2*growth;
-    rect.height += 2*growth;
-    return rect;
-}
 
 static struct layout compute_layout_oriented(int size, bool vertical)
 {
@@ -604,77 +586,23 @@ int main(void)
             }
 
             // Draw buttons
-            int scale = layout.scale;
             for (int t = 0; t < BUTTON_COUNT; ++t)
                 DrawRectangleLinesEx(rect_grow(layout.buttons[t], 1), 1, DARKGRAY);
 
-            // Button 3 (paint bucket)
-            {
-                Rectangle rec = layout.buttons[3];
-
-                if (bucket)
-                    DrawRectangleRec(rec, YELLOW);
-
-                DrawEllipseLines(rec.x + .5*rec.width, rec.y + 0.3*rec.height,
-                        .3*rec.width, .2*rec.height, DARKGRAY);
-
-                rec = layout.buttons[3];
-                rec.y += 0.35 * rec.height;
-                rec.x += 0.25 * rec.width;
-                rec.width *= 0.5;
-                rec.height *= 0.6;
-                DrawRectangleRec(rec, DARKGRAY);
-                rec.height *= 0.2;
-                rec.width += 2;
-                rec.x -= 1;
-                DrawRectangleRec(rec, GRAY);
-                rec.y += rec.height * 2;
-                DrawRectangleRec(rec, GRAY);
-                rec.y += rec.height * 2;
-                DrawRectangleRec(rec, GRAY);
-                rec.width *= 0.5;
-                rec.x += rec.width/2;
-                rec.y = layout.buttons[3].y + 0.5*rec.height;
-                DrawRectangleRec(rec, GRAY);
-            }
+            // Button 0 (options)
+            draw_gear(layout.buttons[0], BGCOLOR, options);
 
             // Button 1 (grid toggle)
-            int gx = layout.buttons[1].x;
-            int gy = layout.buttons[1].y;
-            for (int x = 1; x <= 3; x++)
-                DrawLine(gx + x*scale, gy + 1, gx + x*scale, gy + 4*scale - 1, DARKGRAY);
-            for (int y = 1; y <= 3; y++)
-                DrawLine(gx + 1,  gy + y*scale, gx + 4*scale - 1, gy + y*scale, DARKGRAY);
-            if (!st.grid)
-                DrawLine(gx + 1,  gy + 4*scale - 1, gx + 4*scale - 1, gy + 1, RED);
+            draw_grid(layout.buttons[1], st.grid);
 
             // Button 2 (undo)
             draw_backwards_arrow_button(layout.buttons[2], BGCOLOR, stack.len >= 2, false);
 
-            { // Button 0 (options)
-                Rectangle rec = layout.buttons[0];
-                if (options)
-                    DrawRectangleRec(rec, YELLOW);
-                rec = rect_grow(rec, -1);
-                for (int t = 0; t < 6; ++t)
-                    DrawCircleSector((Vector2){rec.x + rec.width/2, rec.y + rec.height/2},
-                            rec.width/2, 60*t + 15, 60*t + 45, 6, DARKGRAY);
-                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.35, DARKGRAY);
-                DrawCircle(rec.x + rec.width/2, rec.y + rec.height/2, rec.width * 0.15,
-                        options ? YELLOW : BGCOLOR);
-            }
+            // Button 3 (paint bucket)
+            draw_paint_bucket(layout.buttons[3], bucket);
 
-            { // Button 4 (save icon)
-                Rectangle rec = rect_grow(layout.buttons[4], -2);
-                DrawRectangleRec(rec, BLUE);
-                rec.height /= 4;
-                rec.width /= 2;
-                rec.x += rec.width/2;
-                DrawRectangleRec(rec, GRAY);
-                rec.y += 2*rec.height;
-                rec.height *= 2;
-                DrawRectangleRec(rec, GRAY);
-            }
+            // Button 4 (save icon)
+            draw_save_icon(layout.buttons[4]);
 
         EndDrawing();
 
