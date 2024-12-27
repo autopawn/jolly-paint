@@ -656,12 +656,12 @@ int main(void)
             {
                 for (int x = 0; x < st.size; ++x)
                 {
-                    int px = layout.canvas.x + x*layout.pixel_size + 1;
+                    int px = layout.canvas.x + x*layout.pixel_size + 0.4;
                     DrawLine(px, layout.canvas.y, px, layout.canvas.y + layout.canvas.height, GRAY);
                 }
                 for (int y = 0; y < st.size; ++y)
                 {
-                    int py = layout.canvas.y + y*layout.pixel_size;
+                    int py = layout.canvas.y + y*layout.pixel_size + 0.4;
                     DrawLine(layout.canvas.x, py, layout.canvas.x + layout.canvas.width, py, GRAY);
                 }
             }
